@@ -1,0 +1,1012 @@
+html {
+  scroll-behavior: smooth;
+}
+
+/* Landing page design tokens */
+.landing-page {
+  --landing-bg: var(--color-bg-app);
+  --landing-bg-alt: var(--color-bg-surface-muted);
+  --landing-primary: var(--color-primary);
+  --landing-primary-hover: var(--color-primary-hover);
+  --landing-accent: var(--color-accent);
+  --landing-accent-subtle: var(--color-accent);
+  --landing-text: var(--color-text-primary);
+  --landing-text-muted: var(--color-text-muted);
+  --landing-border: color-mix(in srgb, var(--color-border) 85%, transparent);
+  --landing-on-primary: var(--color-on-primary);
+  --landing-details-bg: linear-gradient(180deg, rgba(248, 250, 252, 0.88) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --landing-details-border: rgba(148, 163, 184, 0.28);
+  --landing-details-accent-border: rgba(59, 130, 246, 0.28);
+  --landing-details-shadow: 0 4px 14px rgba(11, 18, 32, 0.06);
+  --landing-visual-bg: rgba(248, 250, 252, 0.82);
+  --landing-visual-border: rgba(148, 163, 184, 0.5);
+  --landing-shadow: 0 4px 24px rgba(11, 18, 32, 0.06);
+  --landing-shadow-lg: 0 12px 48px rgba(11, 18, 32, 0.08);
+  --landing-radius: 16px;
+  --landing-radius-lg: 24px;
+}
+
+.landing-page {
+  min-height: 100%;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  color: var(--landing-text);
+  line-height: 1.65;
+  font-weight: 400;
+}
+
+:root[data-theme='dark'] .landing-page {
+  --landing-shadow: 0 8px 28px rgba(2, 6, 23, 0.42);
+  --landing-shadow-lg: 0 16px 40px rgba(2, 6, 23, 0.5);
+  --landing-details-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-surface-muted) 96%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-surface) 96%, transparent) 100%
+  );
+  --landing-details-border: color-mix(in srgb, var(--color-border-strong) 78%, transparent);
+  --landing-details-accent-border: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  --landing-details-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
+  --landing-visual-bg: color-mix(in srgb, var(--color-bg-surface-muted) 80%, transparent);
+  --landing-visual-border: color-mix(in srgb, var(--color-border-strong) 74%, transparent);
+}
+
+.landing-page .landing-content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .landing-page .landing-content {
+    padding: 0 2.5rem;
+  }
+}
+
+/* Sticky nav */
+.landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  background: color-mix(in srgb, var(--landing-bg) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.landing-nav.scrolled {
+  box-shadow: var(--landing-shadow);
+  background: color-mix(in srgb, var(--landing-bg) 95%, transparent);
+}
+
+.landing-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.landing-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing-nav-logo {
+  width: 32px;
+  height: 32px;
+}
+
+.landing-nav-brand {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--landing-text);
+}
+
+.landing-nav-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--landing-text-muted);
+  padding: 0.2rem 0.5rem;
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+}
+
+.landing-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.landing-nav-link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--landing-text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.landing-nav-link:hover {
+  color: var(--landing-accent);
+}
+
+.landing-nav-cta {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  background: var(--landing-primary);
+  color: var(--landing-on-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.landing-nav-cta:hover {
+  background: var(--landing-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(11, 18, 32, 0.2);
+}
+
+/* Hero */
+.landing-hero {
+  padding: 3rem 0 4rem;
+}
+
+.landing-hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.landing-hero-content h1 {
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 1rem;
+  letter-spacing: -0.015em;
+}
+
+@media (min-width: 768px) {
+  .landing-hero-content h1 {
+    font-size: 2.75rem;
+  }
+}
+
+.landing-hero-headline-accent {
+  color: var(--landing-accent);
+}
+
+.landing-hero-sub {
+  font-size: 1rem;
+  color: var(--landing-text-muted);
+  margin: 0 auto 2rem;
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+/* Upload card */
+.landing-upload-card {
+  background: var(--color-bg-surface);
+  border: 2px dashed var(--landing-border);
+  border-radius: var(--landing-radius-lg);
+  padding: 2rem 2.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(11, 18, 32, 0.1);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  max-width: 100%;
+}
+
+.landing-upload-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 120px;
+}
+
+.landing-upload-card:hover,
+.landing-upload-card.dragging {
+  border-color: var(--landing-accent);
+  background: rgba(59, 130, 246, 0.02);
+  box-shadow: 0 6px 28px rgba(11, 18, 32, 0.1);
+}
+
+.landing-upload-card input {
+  display: none;
+}
+
+.landing-upload-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--landing-on-primary);
+  background: var(--landing-primary);
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(11, 18, 32, 0.25);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.landing-upload-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.landing-upload-card:hover .landing-upload-btn-primary,
+.landing-upload-btn-primary:hover {
+  background: var(--landing-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(11, 18, 32, 0.25);
+}
+
+.landing-upload-secondary {
+  font-size: 0.9rem;
+  color: var(--landing-text-muted);
+  font-weight: 400;
+  margin: 0;
+}
+
+/* Sample zone: puzzles + how-it-works link (white bg, full width) */
+.landing-sample-zone {
+  width: 100%;
+  background: color-mix(in srgb, var(--color-bg-surface) 60%, transparent);
+}
+
+:root[data-theme='dark'] .landing-sample-zone {
+  background: color-mix(in srgb, var(--color-bg-surface) 20%, transparent);
+}
+
+.landing-how-link-wrap {
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .landing-how-link-wrap {
+    padding: 4rem 2.5rem 3rem;
+  }
+}
+
+.landing-how-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--landing-text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.landing-how-link:hover {
+  color: var(--landing-accent);
+}
+
+.landing-how-link-arrow {
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+/* Sample puzzles - full width */
+.landing-sample-section {
+  width: 100%;
+  padding: 3rem 1.5rem 0;
+  margin-top: 0;
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  .landing-sample-section {
+    padding: 4rem 2.5rem 0;
+  }
+}
+
+.landing-sample-section .landing-section-header,
+.landing-sample-section .landing-puzzle-grid,
+.landing-sample-section .landing-sample-actions {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-sample-section .landing-section-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.landing-sample-section .landing-puzzle-grid {
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.landing-sample-section .landing-sample-actions {
+  justify-content: center;
+}
+
+.landing-section-header {
+  margin-bottom: 1.5rem;
+}
+
+.landing-section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.landing-section-header p {
+  font-size: 0.9rem;
+  color: var(--landing-text-muted);
+  margin: 0;
+}
+
+.landing-puzzle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  max-width: 100%;
+}
+
+.landing-puzzle-card {
+  width: 200px;
+  min-width: 200px;
+  height: 220px;
+  background: var(--color-bg-surface);
+  border: 2px solid var(--landing-border);
+  border-radius: var(--landing-radius);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(11, 18, 32, 0.12);
+  transition: all 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 10px;
+}
+
+.landing-puzzle-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(11, 18, 32, 0.12);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.landing-puzzle-card.selected {
+  border-color: var(--landing-accent);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2), 0 0 0 1px var(--landing-accent);
+}
+
+.landing-puzzle-card-thumb {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--landing-bg-alt);
+  margin: 0 auto 8px;
+}
+
+.landing-puzzle-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  border-radius: 12px;
+}
+
+.landing-puzzle-card-name {
+  flex: 1;
+  min-height: 0;
+  padding: 0 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--landing-text);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.landing-sample-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing-sample-btn {
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.landing-solve-btn {
+  background: var(--landing-primary);
+  color: var(--landing-on-primary);
+  border: none;
+  box-shadow: 0 4px 14px rgba(11, 18, 32, 0.3);
+}
+
+.landing-solve-btn:hover:not(:disabled) {
+  background: var(--landing-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(11, 18, 32, 0.3);
+}
+
+.landing-solve-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.landing-play-btn {
+  background: var(--color-bg-surface);
+  color: var(--landing-accent);
+  border: 2px solid var(--landing-accent);
+  box-shadow: 0 4px 14px rgba(11, 18, 32, 0.1);
+}
+
+.landing-play-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+}
+
+.landing-play-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* How it works - full width, same bg as hero */
+.landing-how-section {
+  width: 100%;
+  padding: 4rem 1.5rem 5rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .landing-how-section {
+    padding: 4rem 2.5rem 5rem;
+  }
+}
+
+.landing-how-section .landing-section-header {
+  max-width: min(1520px, 96vw);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2rem;
+}
+
+.landing-how-single {
+  max-width: min(1520px, 96vw);
+  margin: 0 auto;
+}
+
+.landing-step-list {
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+}
+
+.landing-step-list::before {
+  content: '';
+  position: absolute;
+  left: calc(1.5rem + 17px);
+  top: 2rem;
+  bottom: 2rem;
+  width: 0;
+  border-left: 2px dotted var(--landing-border);
+  pointer-events: none;
+}
+
+.landing-step-item {
+  border-bottom: 1px solid var(--landing-border);
+  padding: 0.1rem 0;
+}
+
+.landing-step-item.expanded {
+  padding-bottom: 0.65rem;
+}
+
+.landing-step-item:last-child {
+  border-bottom: none;
+}
+
+.landing-step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.3rem 1.5rem;
+}
+
+.landing-step-num {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--landing-primary);
+  color: var(--landing-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-step-content {
+  flex: 1;
+}
+
+.landing-step-content h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+.landing-step-preview {
+  font-size: 0.95rem;
+  color: var(--landing-text-muted);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.landing-step-details-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.36s ease, opacity 0.26s ease;
+}
+
+.landing-step-details-wrap.expanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.landing-step-details-inner {
+  overflow: hidden;
+  margin-top: 1rem;
+  /* Match .landing-step-header content column: pad + circle + gap (same as h4 / preview). */
+  margin-left: calc(1.5rem + 36px + 1rem);
+  margin-right: 1.5rem;
+  padding: 1rem 1.1rem 1.1rem;
+  background: var(--landing-details-bg);
+  border-radius: 12px;
+  border: 1px solid var(--landing-details-border);
+  border-left: 3px solid var(--landing-details-accent-border);
+  box-shadow: var(--landing-details-shadow);
+}
+
+.landing-step-details-wrap:not(.expanded) .landing-step-details-inner {
+  margin-top: 0;
+}
+
+.landing-step-details {
+  font-size: 0.95rem;
+  color: var(--landing-text-muted);
+  margin: 0 0 0.8rem;
+  line-height: 1.65;
+}
+
+.landing-step-detail-steps {
+  list-style: none;
+  margin: 0 0 0.8rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  counter-reset: detail-step;
+}
+
+.landing-step-detail-step {
+  counter-increment: detail-step;
+  display: grid;
+  grid-template-columns: 1.6rem 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.55rem;
+  row-gap: 0.15rem;
+}
+
+.landing-step-detail-step::before {
+  content: counter(detail-step);
+  grid-row: 1 / 3;
+  grid-column: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.05rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(59, 130, 246, 0.75);
+  line-height: 1.55;
+}
+
+.landing-step-detail-heading {
+  grid-column: 2;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--landing-text);
+  line-height: 1.4;
+}
+
+.landing-step-detail-body {
+  grid-column: 2;
+  font-size: 0.875rem;
+  color: var(--landing-text-muted);
+  line-height: 1.6;
+}
+
+.landing-step-visual {
+  /* Shared max width for sequence/grid slots; frame height follows each image’s aspect ratio. */
+  --step-visual-slot-max: min(380px, 100%);
+  border: 1px dashed var(--landing-visual-border);
+  border-radius: 10px;
+  background: var(--landing-visual-bg);
+  padding: 0.75rem;
+}
+
+.landing-step-visual-frame {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: var(--color-bg-surface);
+  box-sizing: border-box;
+}
+
+/* Code-block variant: base colours + border. */
+.landing-step-visual-frame--code {
+  background: #1a1f2e;
+  border-color: rgba(99, 120, 160, 0.35);
+}
+
+/*
+ * In the uniform-row sequence the base .frame rule (3-class specificity) wins over the
+ * 1-class --code modifier. Use a 4-class selector to override everything needed.
+ *
+ * flex: none  — aspect-ratio must win; flex: 1 would fight it for the main-axis height.
+ * aspect-ratio: 1 — matches the ~square placeholder images (760×706, 759×763), so the
+ *                   code box scales with the slot width exactly like the image boxes do.
+ *                   When real images are swapped in, adjust this value to match.
+ * align-items: stretch — the <pre> stretches to fill the frame height (cross-axis).
+ * padding: 0  — <pre> fills edge-to-edge; it has its own padding.
+ */
+.landing-step-visual-gallery-sequence--uniform-row
+  .landing-step-visual-slot
+  .landing-step-visual-frame.landing-step-visual-frame--code {
+  flex: none;
+  aspect-ratio: 1;
+  align-items: stretch;
+  padding: 0;
+}
+
+
+.landing-step-code-block {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-family: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
+  font-size: 0.8rem;
+  line-height: 1.75;
+  color: #8b9ab4;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;       /* fills frame width (main axis of row-flex); height comes from align-items:stretch on frame */
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.landing-step-code-block .jk { color: #7ec8e3; }   /* key   – light blue  */
+.landing-step-code-block .js { color: #a8d9a0; }   /* string – soft green */
+.landing-step-code-block .jn { color: #e0c97a; }   /* number – warm amber */
+.landing-step-code-block .jp { color: #6e7e9e; }   /* brace/bracket       */
+
+.landing-step-visual-frame-single {
+  width: fit-content;
+  max-width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 10px;
+  display: block;
+}
+
+.landing-step-visual-single-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.landing-step-visual-single-wrap .landing-step-visual-caption {
+  max-width: 42rem;
+}
+
+.landing-step-visual-frame img {
+  display: block;
+}
+
+/* Sequence/grid: shared slot width cap (modifiers below). */
+.landing-step-visual-gallery .landing-step-visual-slot {
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Steps 1–2: square cells; image fills square with center crop (CSS only, not source crop). */
+.landing-step-visual-gallery-sequence--square-slots .landing-step-visual-slot {
+  width: min(100%, var(--step-visual-slot-max));
+  aspect-ratio: 1;
+  height: auto;
+}
+
+.landing-step-visual-gallery-sequence--square-slots .landing-step-visual-slot .landing-step-visual-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: grid;
+}
+
+.landing-step-visual-gallery-sequence--square-slots .landing-step-visual-slot .landing-step-visual-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/*
+ * Steps 3+ (sequence): same row height = tallest panel; images not forced square (object-fit contain).
+ */
+.landing-step-visual-gallery-sequence--uniform-row > .landing-step-visual-card {
+  align-self: stretch;
+  align-items: stretch;
+}
+
+.landing-step-visual-gallery-sequence--uniform-row .landing-step-visual-slot {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: var(--step-visual-slot-max);
+}
+
+.landing-step-visual-gallery-sequence--uniform-row .landing-step-visual-slot .landing-step-visual-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.landing-step-visual-gallery-sequence--uniform-row .landing-step-visual-slot .landing-step-visual-frame img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Grid layout (if used): match uniform-row — equal row strip, non-square images. */
+.landing-step-visual-gallery-grid .landing-step-visual-card {
+  align-self: stretch;
+  align-items: stretch;
+}
+
+.landing-step-visual-gallery-grid .landing-step-visual-slot {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: var(--step-visual-slot-max);
+  margin-inline: auto;
+}
+
+.landing-step-visual-gallery-grid .landing-step-visual-slot .landing-step-visual-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.landing-step-visual-gallery-grid .landing-step-visual-slot .landing-step-visual-frame img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.landing-step-visual-frame-single img {
+  width: auto;
+  height: auto;
+  max-width: min(100%, 960px);
+  max-height: min(68vh, 680px);
+  object-fit: contain;
+}
+
+.landing-step-visual-gallery {
+  width: 100%;
+}
+
+/* Arrows are siblings of cards so each column gets equal width (no arrow inside column). */
+.landing-step-visual-gallery-sequence {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing-step-visual-gallery-sequence > .landing-step-visual-card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.landing-step-visual-gallery-sequence > .landing-step-visual-separator {
+  flex-shrink: 0;
+}
+
+.landing-step-visual-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.landing-step-visual-card-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.landing-step-visual-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.landing-step-visual-caption {
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--landing-text);
+  text-align: center;
+  width: 100%;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+
+.landing-step-visual-separator {
+  flex-shrink: 0;
+  color: var(--landing-text-muted);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.landing-step-visual-note {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+  color: var(--landing-text-muted);
+}
+
+.landing-step-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--landing-text-muted);
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.landing-step-toggle:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  outline-offset: 2px;
+}
+
+.landing-step-toggle:hover {
+  color: var(--landing-accent);
+}
+
+.landing-step-toggle svg {
+  width: 28px;
+  height: 28px;
+}
+
+.landing-step-toggle.expanded {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+  .landing-step-details-inner {
+    /* Keep timeline inset — margin-left: 0 overlapped the dotted rail on narrow screens. */
+    margin-right: 0.75rem;
+  }
+
+  .landing-step-visual-gallery-sequence {
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .landing-step-visual-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-step-visual-card-wrap {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .landing-step-visual-separator {
+    align-self: center;
+    transform: rotate(90deg);
+  }
+}
+
+/* Footer */
+.landing-footer {
+  padding: 2rem 0 3rem;
+  border-top: 1px solid var(--landing-border);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.landing-footer-credit {
+  font-size: 0.9rem;
+  color: var(--landing-text-muted);
+  margin: 0;
+}
+
+.landing-footer-credit a {
+  color: var(--landing-accent);
+  text-decoration: none;
+}
+
+.landing-footer-credit a:hover {
+  text-decoration: underline;
+}

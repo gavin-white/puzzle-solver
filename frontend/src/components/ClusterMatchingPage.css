@@ -1,0 +1,285 @@
+.clusters-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.cluster-group {
+  background-color: var(--color-bg-surface);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--color-border);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cluster-group.drag-over {
+  border-style: dashed;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cluster-meta {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0.12rem 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: color-mix(in srgb, var(--color-bg-surface-muted) 92%, transparent);
+}
+
+.cluster-count {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.cluster-triangles {
+  padding: 0.35rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.3rem;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  align-content: start;
+}
+
+.triangle-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  padding: 0.15rem;
+  border-radius: 4px;
+}
+
+.triangle-item:hover {
+  transform: scale(1.05);
+  background-color: var(--color-bg-surface-muted);
+}
+
+.triangle-item:active {
+  cursor: grabbing;
+}
+
+.triangle-item.dragging {
+  opacity: 0.5;
+}
+
+.triangle-image {
+  width: 100%;
+  min-width: 80px;
+  height: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background-color: var(--color-bg-surface-muted);
+  padding: 0.15rem;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.matching-mode {
+  padding: 0.5rem clamp(0.5rem, 2vw, 1.25rem);
+  flex: 1;
+  min-height: 0;
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+
+/* Wide card — ~90% of content area; triangles scale with column width */
+.matching-board {
+  width: 90%;
+  max-width: 100%;
+  margin: 0 auto 0.75rem;
+  padding: 0.5rem clamp(0.4rem, 1.2vw, 0.75rem);
+  flex: 0 0 auto;
+  align-self: center;
+  box-sizing: border-box;
+  background: var(--color-bg-surface);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(11, 18, 32, 0.07);
+}
+
+.matching-container {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: auto;
+  gap: 0;
+  width: 100%;
+  position: relative;
+  align-items: start;
+  transition: opacity 0.25s ease;
+}
+
+.matching-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  align-items: stretch;
+  width: 100%;
+  height: auto;
+}
+
+.matching-column-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  height: fit-content;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-surface-muted) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-surface-muted) 80%, var(--color-bg-surface)) 100%
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 85%, transparent);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.matching-column:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-border-strong) 0px,
+    var(--color-border-strong) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.matching-cluster {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  transition:
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: grab;
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.matching-cluster.top-cluster,
+.matching-cluster.bottom-cluster {
+  border-bottom: none;
+}
+
+.matching-cluster.dragging {
+  opacity: 0.5;
+}
+
+.matching-cluster.drag-over {
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.matching-cluster:active {
+  cursor: grabbing;
+}
+
+.matching-triangle-image {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  padding: 0 0.15rem;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+  box-sizing: border-box;
+}
+
+.matching-cluster.top-cluster .matching-triangle-image {
+  object-position: center bottom;
+}
+
+.matching-cluster.bottom-cluster .matching-triangle-image {
+  object-position: center top;
+}
+
+.matching-empty {
+  min-height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 1rem 0.5rem;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.error-message {
+  background-color: var(--color-bg-surface);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.error-message h2 {
+  color: var(--color-danger);
+  margin-bottom: 1rem;
+}
+
+.error-message p {
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .clusters-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .clusters-container {
+    grid-template-columns: 1fr;
+  }
+
+  .cluster-triangles {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+}
+

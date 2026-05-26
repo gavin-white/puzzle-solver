@@ -1,0 +1,9 @@
+# Local development extras (install with: pip install -r requirements-dev.txt)
+-r requirements.txt
+
+ipython==8.12.3
+jupyter_client==8.8.0
+jupyter_core==5.9.1
+nbconvert==7.17.0
+nbformat==5.10.4
+yarg==0.1.9
