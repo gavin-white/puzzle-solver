@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -14,7 +14,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    cors_origins: list[str] = ["http://localhost:5173"]
+    # NoDecode: Cloud Run env vars are plain strings, not JSON arrays.
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
     debug_detection: bool = False
     debug_clustering: bool = False
     debug_errors: bool = False
