@@ -314,7 +314,7 @@ function App() {
           </button>
           {isHome ? (
             <a
-              href="https://github.com"
+              href="https://github.com/gavin-white/puzzle-solver"
               target="_blank"
               rel="noreferrer noopener"
               className="app-header-cta"

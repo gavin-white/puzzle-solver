@@ -5,7 +5,7 @@ export function Footer() {
       <p className="landing-footer-credit">
         Built by Gavin White
         {' · '}
-        <a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://github.com/gavin-white/puzzle-solver" target="_blank" rel="noreferrer">GitHub</a>
       </p>
     </footer>
   );
