@@ -31,6 +31,36 @@ interface PlayPageProps {
 
 const rotationToDegrees = (rotation: number): number => rotation;
 
+const loadedPieceUrls = new Set<string>();
+
+interface PieceImageProps {
+  puzzleId: string;
+  pieceId: number;
+  rotation: number;
+  className?: string;
+}
+
+/** Piece artwork with a neutral placeholder until the image finishes loading. */
+function PieceImage({ puzzleId, pieceId, rotation, className = 'piece-image' }: PieceImageProps) {
+  const src = getPieceImageUrl(puzzleId, pieceId);
+  const [loaded, setLoaded] = useState(() => loadedPieceUrls.has(src));
+
+  return (
+    <img
+      src={src}
+      alt=""
+      decoding="async"
+      className={`${className}${loaded ? ' piece-image-loaded' : ''}`}
+      style={{ transform: `rotate(${rotation}deg)` }}
+      draggable={false}
+      onLoad={() => {
+        loadedPieceUrls.add(src);
+        setLoaded(true);
+      }}
+    />
+  );
+}
+
 /** Load bundled puzzle JSON, manage board state, hints/solve, and win detection. */
 export function PlayPage({ puzzleId, puzzleName, onBack, onShowToast }: PlayPageProps) {
   const [board, setBoard] = useState<BoardState>(() =>
@@ -338,6 +368,22 @@ export function PlayPage({ puzzleId, puzzleName, onBack, onShowToast }: PlayPage
 
   useEffect(() => {
     if (!puzzleId) return;
+    const links: HTMLLinkElement[] = [];
+    for (let pieceId = 0; pieceId < 9; pieceId++) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = getPieceImageUrl(puzzleId, pieceId);
+      document.head.appendChild(link);
+      links.push(link);
+    }
+    return () => {
+      links.forEach((link) => link.remove());
+    };
+  }, [puzzleId]);
+
+  useEffect(() => {
+    if (!puzzleId) return;
     const loadPuzzleData = async () => {
       setPuzzleDataLoading(true);
       setPuzzleDataError(null);
@@ -413,12 +459,10 @@ export function PlayPage({ puzzleId, puzzleName, onBack, onShowToast }: PlayPage
                     className="puzzle-piece"
                     onPointerDown={(e) => drag.handleBoardPointerDown(e, index, piece)}
                   >
-                    <img
-                      src={getPieceImageUrl(puzzleId, piece.pieceId)}
-                      alt={`Piece ${piece.pieceId + 1}`}
-                      className="piece-image"
-                      style={{ transform: `rotate(${rotationToDegrees(piece.rotation)}deg)` }}
-                      draggable={false}
+                    <PieceImage
+                      puzzleId={puzzleId}
+                      pieceId={piece.pieceId}
+                      rotation={rotationToDegrees(piece.rotation)}
                     />
                     <button
                       className="rotate-button"
@@ -445,12 +489,10 @@ export function PlayPage({ puzzleId, puzzleName, onBack, onShowToast }: PlayPage
                 style={{ left: `${piece.x}%`, top: `${piece.y}%`, width: pieceSize, height: pieceSize }}
                 onPointerDown={(e) => drag.handleFreePointerDown(e, index, piece)}
               >
-                <img
-                  src={getPieceImageUrl(puzzleId, piece.pieceId)}
-                  alt={`Piece ${piece.pieceId + 1}`}
-                  className="piece-image"
-                  style={{ transform: `rotate(${rotationToDegrees(piece.rotation)}deg)` }}
-                  draggable={false}
+                <PieceImage
+                  puzzleId={puzzleId}
+                  pieceId={piece.pieceId}
+                  rotation={rotationToDegrees(piece.rotation)}
                 />
                 <button
                   className="rotate-button"
@@ -471,12 +513,10 @@ export function PlayPage({ puzzleId, puzzleName, onBack, onShowToast }: PlayPage
               className="dragging-piece"
               style={{ left: drag.draggingPiece.left, top: drag.draggingPiece.top, width: pieceSize, height: pieceSize }}
             >
-              <img
-                src={getPieceImageUrl(puzzleId, drag.draggingPiece.piece.pieceId)}
-                alt={`Piece ${drag.draggingPiece.piece.pieceId + 1}`}
-                className="piece-image"
-                style={{ transform: `rotate(${rotationToDegrees(drag.draggingPiece.piece.rotation)}deg)` }}
-                draggable={false}
+              <PieceImage
+                puzzleId={puzzleId}
+                pieceId={drag.draggingPiece.piece.pieceId}
+                rotation={rotationToDegrees(drag.draggingPiece.piece.rotation)}
               />
             </div>
           )}
@@ -492,12 +532,11 @@ export function PlayPage({ puzzleId, puzzleName, onBack, onShowToast }: PlayPage
                 className="animating-piece"
                 style={{ left: x, top: y, width: pieceSize, height: pieceSize }}
               >
-                <img
-                  src={getPieceImageUrl(puzzleId, piece.pieceId)}
-                  alt={`Piece ${piece.pieceId + 1}`}
+                <PieceImage
+                  puzzleId={puzzleId}
+                  pieceId={piece.pieceId}
+                  rotation={rotation}
                   className="piece-image animating-image"
-                  style={{ transform: `rotate(${rotation}deg)` }}
-                  draggable={false}
                 />
               </div>
             );

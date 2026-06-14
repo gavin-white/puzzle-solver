@@ -21,7 +21,7 @@ export const degreesToApiRotation = (degrees: number): number => {
 };
 
 export const getPieceImageUrl = (puzzleId: string, pieceId: number): string => {
-  return `/puzzles/${puzzleId}/piece${pieceId}.png`;
+  return `/puzzles/${puzzleId}/piece${pieceId}.webp`;
 };
 
 /** Place pieces on a 9-cell array from `/api/solve`-style maps. */

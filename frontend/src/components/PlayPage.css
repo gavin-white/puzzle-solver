@@ -169,9 +169,15 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  opacity: 0;
+  background-color: var(--color-bg-surface-muted);
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.15s ease-out;
   user-select: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.piece-image-loaded {
+  opacity: 1;
 }
 
 /* Free pieces - positioned absolutely in game area */

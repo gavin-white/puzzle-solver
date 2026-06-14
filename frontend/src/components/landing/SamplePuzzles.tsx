@@ -5,7 +5,7 @@ import type { ShowToast } from '../../types/ui';
 const PUZZLE_IDS = ['puzzle1', 'puzzle2', 'puzzle3', 'puzzle4', 'puzzle5'];
 
 const getPuzzlePaths = (puzzleId: string) => ({
-  thumbnail: `/puzzles/${puzzleId}/piece0.png`,
+  thumbnail: `/puzzles/${puzzleId}/thumbnail.png`,
   fullImage: `/puzzles/${puzzleId}/full-puzzle.jpeg`,
   jsonPath: `/puzzles/${puzzleId}/puzzle.json`,
 });
