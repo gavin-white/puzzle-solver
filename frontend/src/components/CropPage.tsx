@@ -7,6 +7,7 @@ interface CropPageProps {
   imageFile: File;
   onCrop: (croppedFile: File) => void;
   onCancel: () => void;
+  isLoading?: boolean;
   onShowToast?: ShowToast;
 }
 
@@ -56,7 +57,7 @@ function whenDecoded(img: HTMLImageElement): Promise<void> {
 }
 
 /** Draggable crop overlay; emits a cropped `File` then parent runs detection. */
-export function CropPage({ imageFile, onCrop, onCancel, onShowToast }: CropPageProps) {
+export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onShowToast }: CropPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,6 +71,7 @@ export function CropPage({ imageFile, onCrop, onCancel, onShowToast }: CropPageP
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number; cropStart: CropArea } | null>(null);
   const [dragType, setDragType] = useState<'move' | 'resize-topLeft' | 'resize-topRight' | 'resize-bottomLeft' | 'resize-bottomRight' | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -269,8 +271,9 @@ export function CropPage({ imageFile, onCrop, onCancel, onShowToast }: CropPageP
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const handleCrop = useCallback(async () => {
-    if (!cropArea || !imageSize || !displaySize) return;
+    if (!cropArea || !imageSize || !displaySize || isSubmitting || isLoading) return;
 
+    setIsSubmitting(true);
     const mime = outputMimeType(imageFile);
 
     try {
@@ -340,11 +343,14 @@ export function CropPage({ imageFile, onCrop, onCancel, onShowToast }: CropPageP
       });
     } catch (err) {
       console.error('Error in handleCrop:', err);
+      setIsSubmitting(false);
       if (onShowToast) {
         onShowToast('Unable to crop this image right now. Please try again.', 'error');
       }
     }
-  }, [cropArea, imageSize, displaySize, imageFile, onCrop, onShowToast]);
+  }, [cropArea, imageSize, displaySize, imageFile, onCrop, onShowToast, isSubmitting, isLoading]);
+
+  const isBusy = isSubmitting || isLoading;
 
   if (phase === 'loading') {
     return (
@@ -484,11 +490,16 @@ export function CropPage({ imageFile, onCrop, onCancel, onShowToast }: CropPageP
           </svg>
           Back
         </button>
-        <button type="button" onClick={handleCrop} className="button button-submit">
+        <button
+          type="button"
+          onClick={() => void handleCrop()}
+          disabled={isBusy}
+          className="button button-submit"
+        >
           <svg className="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          Submit
+          {isBusy ? 'Submitting...' : 'Submit'}
         </button>
       </div>
     </div>

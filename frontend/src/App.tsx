@@ -200,6 +200,7 @@ function App() {
             imageFile={puzzle.uploadedFile}
             onCrop={puzzle.handleCropApply}
             onCancel={puzzle.handleCropCancel}
+            isLoading={puzzle.isLoading}
             onShowToast={showToast}
           />
         );
