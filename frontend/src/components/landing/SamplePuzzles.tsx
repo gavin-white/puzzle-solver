@@ -86,7 +86,7 @@ export function SamplePuzzles({
       </div>
       <div className="landing-puzzle-grid">
         {loading ? (
-          <div style={{ gridColumn: '1 / -1', color: 'var(--landing-text-muted)' }}>Loading puzzles...</div>
+          <div style={{ gridColumn: '1 / -1', color: 'var(--landing-text-muted)', fontSize: 'var(--font-size-secondary)', lineHeight: 'var(--line-height-secondary)' }}>Loading puzzles...</div>
         ) : (
           puzzles.map((p) => (
             <PuzzleCard

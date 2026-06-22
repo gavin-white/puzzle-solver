@@ -3,6 +3,7 @@
  * global header, help modal, and toast host.
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { Moon, Sun } from 'lucide-react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './components/landing';
 import { CropPage } from './components/CropPage';
@@ -38,6 +39,7 @@ function App() {
   const [helpClosing, setHelpClosing] = useState(false);
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const helpCloseRef = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'light';
@@ -276,6 +278,16 @@ function App() {
   };
 
   const isHome = puzzle.currentPage === 'home';
+  const isPlay = puzzle.currentPage === 'play';
+  const isTitleClickable = isHome || headerConfig.showBackToUpload;
+
+  const handleTitleClick = useCallback(() => {
+    if (isHome) {
+      mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    puzzle.handleBackToUpload();
+  }, [isHome, puzzle.handleBackToUpload]);
 
   return (
     <div className="app">
@@ -284,13 +296,19 @@ function App() {
           <h1>
             <button
               type="button"
-              className={headerConfig.showBackToUpload ? 'app-title-clickable' : 'app-title-static'}
-              onClick={headerConfig.showBackToUpload ? puzzle.handleBackToUpload : undefined}
-              disabled={!headerConfig.showBackToUpload}
-              aria-label={headerConfig.showBackToUpload ? 'Back to upload' : undefined}
+              className={isTitleClickable ? 'app-title-clickable' : 'app-title-static'}
+              onClick={isTitleClickable ? handleTitleClick : undefined}
+              disabled={!isTitleClickable}
+              aria-label={
+                isHome
+                  ? 'Scramble Squares Solver, scroll to top'
+                  : headerConfig.showBackToUpload
+                    ? 'Scramble Squares Solver, back to upload'
+                    : undefined
+              }
             >
               <img src="/puzzle-logo.svg" alt="" className="app-logo" />
-              Scramble Squares Solver
+              <span className="app-title-text">Scramble Squares Solver</span>
             </button>
           </h1>
         </div>
@@ -303,14 +321,9 @@ function App() {
             title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDarkMode ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-              </svg>
+              <Sun className="theme-toggle-icon" aria-hidden strokeWidth={1.75} />
             ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M21 12.79A9 9 0 1 1 11.21 3c.2 0 .4.02.59.05a1 1 0 0 1 .46 1.73A7 7 0 0 0 19.22 16.8a1 1 0 0 1 1.73.46c.03.19.05.39.05.59z" />
-              </svg>
+              <Moon className="theme-toggle-icon" aria-hidden strokeWidth={1.75} />
             )}
           </button>
           {isHome ? (
@@ -347,7 +360,10 @@ function App() {
         </div>
       </header>
 
-      <main className={`app-main ${isHome ? 'app-main--landing' : ''}`}>
+      <main
+        ref={mainRef}
+        className={`app-main${isHome ? ' app-main--landing' : ''}${isPlay ? ' app-main--play' : ''}`}
+      >
         <ErrorBoundary>
           {renderPage()}
         </ErrorBoundary>

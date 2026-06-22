@@ -155,6 +155,8 @@
 
 .loading-message {
   text-align: center;
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
   color: var(--color-text-muted);
   padding: 2rem;
   font-style: italic;

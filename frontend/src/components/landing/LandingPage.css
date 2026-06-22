@@ -24,6 +24,16 @@ html {
   --landing-shadow-lg: 0 12px 48px rgba(11, 18, 32, 0.08);
   --landing-radius: 16px;
   --landing-radius-lg: 24px;
+  --landing-sample-bg-peak: var(--color-bg-surface);
+  --landing-sample-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-surface) 48%, var(--color-bg-app)) 0%,
+    color-mix(in srgb, var(--color-bg-surface) 88%, var(--color-bg-app)) 7%,
+    var(--color-bg-surface) 20%,
+    var(--color-bg-surface) 80%,
+    color-mix(in srgb, var(--color-bg-surface) 88%, var(--color-bg-app)) 93%,
+    color-mix(in srgb, var(--color-bg-surface) 48%, var(--color-bg-app)) 100%
+  );
 }
 
 .landing-page {
@@ -32,6 +42,15 @@ html {
   color: var(--landing-text);
   line-height: 1.65;
   font-weight: 400;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-above-fold {
+  flex: 1 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 :root[data-theme='dark'] .landing-page {
@@ -47,6 +66,16 @@ html {
   --landing-details-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
   --landing-visual-bg: color-mix(in srgb, var(--color-bg-surface-muted) 80%, transparent);
   --landing-visual-border: color-mix(in srgb, var(--color-border-strong) 74%, transparent);
+  --landing-sample-bg-peak: color-mix(in srgb, var(--color-bg-surface) 50%, var(--color-bg-app));
+  --landing-sample-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-surface) 26%, var(--color-bg-app)) 0%,
+    color-mix(in srgb, var(--landing-sample-bg-peak) 68%, var(--color-bg-app)) 7%,
+    var(--landing-sample-bg-peak) 20%,
+    var(--landing-sample-bg-peak) 80%,
+    color-mix(in srgb, var(--landing-sample-bg-peak) 68%, var(--color-bg-app)) 93%,
+    color-mix(in srgb, var(--color-bg-surface) 26%, var(--color-bg-app)) 100%
+  );
 }
 
 .landing-page .landing-content {
@@ -157,8 +186,19 @@ html {
 }
 
 /* Hero */
+.landing-above-fold > .landing-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .landing-hero {
-  padding: 3rem 0 4rem;
+  padding: 2rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .landing-hero-content {
@@ -186,7 +226,8 @@ html {
 }
 
 .landing-hero-sub {
-  font-size: 1rem;
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
   color: var(--landing-text-muted);
   margin: 0 auto 2rem;
   max-width: 520px;
@@ -256,30 +297,35 @@ html {
 }
 
 .landing-upload-secondary {
-  font-size: 0.9rem;
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
   color: var(--landing-text-muted);
   font-weight: 400;
   margin: 0;
 }
 
 /* Sample zone: puzzles + how-it-works link (white bg, full width) */
-.landing-sample-zone {
-  width: 100%;
-  background: color-mix(in srgb, var(--color-bg-surface) 60%, transparent);
+.landing-above-fold > .landing-sample-zone {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 
-:root[data-theme='dark'] .landing-sample-zone {
-  background: color-mix(in srgb, var(--color-bg-surface) 20%, transparent);
+.landing-sample-zone {
+  width: 100%;
+  background: var(--landing-sample-bg);
 }
 
 .landing-how-link-wrap {
-  padding: 3rem 1.5rem 2.5rem;
+  flex-shrink: 0;
+  padding: 1.5rem 1.5rem 2rem;
   text-align: center;
+  margin-top: auto;
 }
 
 @media (min-width: 768px) {
   .landing-how-link-wrap {
-    padding: 4rem 2.5rem 3rem;
+    padding: 2rem 2.5rem 2.5rem;
   }
 }
 
@@ -288,7 +334,8 @@ html {
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.9rem;
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
   font-weight: 500;
   color: var(--landing-text-muted);
   text-decoration: none;
@@ -308,14 +355,18 @@ html {
 /* Sample puzzles - full width */
 .landing-sample-section {
   width: 100%;
-  padding: 3rem 1.5rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 1.5rem 0;
   margin-top: 0;
   background: transparent;
 }
 
 @media (min-width: 768px) {
   .landing-sample-section {
-    padding: 4rem 2.5rem 0;
+    padding: 2.5rem 2.5rem 0;
   }
 }
 
@@ -352,7 +403,8 @@ html {
 }
 
 .landing-section-header p {
-  font-size: 0.9rem;
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
   color: var(--landing-text-muted);
   margin: 0;
 }
@@ -576,10 +628,10 @@ html {
 }
 
 .landing-step-preview {
-  font-size: 0.95rem;
+  font-size: var(--font-size-secondary);
   color: var(--landing-text-muted);
   margin: 0;
-  line-height: 1.55;
+  line-height: var(--line-height-secondary);
 }
 
 .landing-step-details-wrap {
@@ -613,10 +665,10 @@ html {
 }
 
 .landing-step-details {
-  font-size: 0.95rem;
+  font-size: var(--font-size-secondary);
   color: var(--landing-text-muted);
   margin: 0 0 0.8rem;
-  line-height: 1.65;
+  line-height: var(--line-height-secondary);
 }
 
 .landing-step-detail-steps {
@@ -662,9 +714,9 @@ html {
 
 .landing-step-detail-body {
   grid-column: 2;
-  font-size: 0.875rem;
+  font-size: var(--font-size-secondary);
   color: var(--landing-text-muted);
-  line-height: 1.6;
+  line-height: var(--line-height-secondary);
 }
 
 .landing-step-visual {
@@ -997,7 +1049,8 @@ html {
 }
 
 .landing-footer-credit {
-  font-size: 0.9rem;
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
   color: var(--landing-text-muted);
   margin: 0;
 }
