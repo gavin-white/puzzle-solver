@@ -40,31 +40,33 @@ export function LandingPage({
 
   return (
     <div className="landing-page">
-      <div className="landing-content">
-        <Hero onUpload={onImageSelect} disabled={disabled} />
-      </div>
+      <div className="landing-above-fold">
+        <div className="landing-content">
+          <Hero onUpload={onImageSelect} disabled={disabled} />
+        </div>
 
-      <div className="landing-sample-zone">
-        <SamplePuzzles
-          selectedId={selectedPuzzleId}
-          onSelect={setSelectedPuzzleId}
-          onSolve={handleSolveSample}
-          onPlay={handlePlay}
-          disabled={disabled}
-          onShowToast={onShowToast}
-        />
-        <div className="landing-how-link-wrap">
-          <a
-            href="#how-it-works"
-            className="landing-how-link"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            <span className="landing-how-link-arrow" aria-hidden>↓</span>
-            How it works
-          </a>
+        <div className="landing-sample-zone">
+          <SamplePuzzles
+            selectedId={selectedPuzzleId}
+            onSelect={setSelectedPuzzleId}
+            onSolve={handleSolveSample}
+            onPlay={handlePlay}
+            disabled={disabled}
+            onShowToast={onShowToast}
+          />
+          <div className="landing-how-link-wrap">
+            <a
+              href="#how-it-works"
+              className="landing-how-link"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <span className="landing-how-link-arrow" aria-hidden>↓</span>
+              How it works
+            </a>
+          </div>
         </div>
       </div>
 

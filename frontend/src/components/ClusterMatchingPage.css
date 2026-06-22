@@ -244,7 +244,8 @@
   color: var(--color-text-muted);
   padding: 1rem 0.5rem;
   font-style: italic;
-  font-size: 0.85rem;
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
 }
 
 .error-message {
@@ -263,6 +264,8 @@
 }
 
 .error-message p {
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
   color: var(--color-text-muted);
   margin-bottom: 1.5rem;
 }
