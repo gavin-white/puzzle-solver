@@ -24,14 +24,15 @@ html {
   --landing-shadow-lg: 0 12px 48px rgba(11, 18, 32, 0.08);
   --landing-radius: 16px;
   --landing-radius-lg: 24px;
-  --landing-sample-bg-peak: color-mix(in srgb, var(--color-bg-surface) 82%, var(--color-bg-app));
+  --landing-sample-bg-peak: var(--color-bg-surface);
   --landing-sample-bg: linear-gradient(
     180deg,
-    var(--color-bg-app) 0%,
-    color-mix(in srgb, var(--landing-sample-bg-peak) 45%, var(--color-bg-app)) 14%,
-    var(--landing-sample-bg-peak) 50%,
-    color-mix(in srgb, var(--landing-sample-bg-peak) 45%, var(--color-bg-app)) 86%,
-    var(--color-bg-app) 100%
+    color-mix(in srgb, var(--color-bg-surface) 48%, var(--color-bg-app)) 0%,
+    color-mix(in srgb, var(--color-bg-surface) 88%, var(--color-bg-app)) 7%,
+    var(--color-bg-surface) 20%,
+    var(--color-bg-surface) 80%,
+    color-mix(in srgb, var(--color-bg-surface) 88%, var(--color-bg-app)) 93%,
+    color-mix(in srgb, var(--color-bg-surface) 48%, var(--color-bg-app)) 100%
   );
 }
 
@@ -65,14 +66,15 @@ html {
   --landing-details-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
   --landing-visual-bg: color-mix(in srgb, var(--color-bg-surface-muted) 80%, transparent);
   --landing-visual-border: color-mix(in srgb, var(--color-border-strong) 74%, transparent);
-  --landing-sample-bg-peak: color-mix(in srgb, var(--color-bg-surface) 42%, var(--color-bg-app));
+  --landing-sample-bg-peak: color-mix(in srgb, var(--color-bg-surface) 50%, var(--color-bg-app));
   --landing-sample-bg: linear-gradient(
     180deg,
-    var(--color-bg-app) 0%,
-    color-mix(in srgb, var(--landing-sample-bg-peak) 45%, var(--color-bg-app)) 14%,
-    var(--landing-sample-bg-peak) 50%,
-    color-mix(in srgb, var(--landing-sample-bg-peak) 45%, var(--color-bg-app)) 86%,
-    var(--color-bg-app) 100%
+    color-mix(in srgb, var(--color-bg-surface) 26%, var(--color-bg-app)) 0%,
+    color-mix(in srgb, var(--landing-sample-bg-peak) 68%, var(--color-bg-app)) 7%,
+    var(--landing-sample-bg-peak) 20%,
+    var(--landing-sample-bg-peak) 80%,
+    color-mix(in srgb, var(--landing-sample-bg-peak) 68%, var(--color-bg-app)) 93%,
+    color-mix(in srgb, var(--color-bg-surface) 26%, var(--color-bg-app)) 100%
   );
 }
 
