@@ -8,6 +8,7 @@
   min-height: 0;
   max-width: 100%;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .cluster-group {
@@ -93,6 +94,33 @@
   padding: 0.15rem;
   object-fit: contain;
   pointer-events: none;
+}
+
+.cluster-empty-placeholder {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 2rem;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.pointer-drag-preview {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.85;
+  max-width: 120px;
+}
+
+.pointer-drag-preview .triangle-image,
+.pointer-drag-preview .matching-triangle-image {
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(11, 18, 32, 0.2);
+}
+
+.pointer-drag-preview--matching {
+  max-width: min(28vw, 160px);
 }
 
 .matching-mode {
@@ -196,6 +224,44 @@
   padding: 0;
 }
 
+.matching-triangle-frame {
+  width: 100%;
+  line-height: 0;
+  display: block;
+}
+
+.matching-triangle-image {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  padding: 0 0.15rem;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+  box-sizing: border-box;
+}
+
+/*
+ * Desktop (column layout): pairs stack vertically with no gap between them.
+ * Top cluster: image anchored to the bottom edge (object-position: center bottom).
+ * Bottom cluster: frame rotated 180° with image anchored to the top edge.
+ * Matching edges meet on the horizontal seam between top and bottom.
+ */
+.matching-cluster.top-cluster .matching-triangle-image {
+  object-position: center bottom;
+}
+
+.matching-cluster.bottom-cluster .matching-triangle-frame {
+  transform: rotate(180deg);
+}
+
+.matching-cluster.bottom-cluster .matching-triangle-image {
+  object-position: center top;
+  padding: 0 0.15rem;
+}
+
 .matching-cluster.top-cluster,
 .matching-cluster.bottom-cluster {
   border-bottom: none;
@@ -214,25 +280,8 @@
   cursor: grabbing;
 }
 
-.matching-triangle-image {
-  width: 100%;
-  height: auto;
-  margin: 0;
-  border: none;
-  border-radius: 0;
-  padding: 0 0.15rem;
-  object-fit: contain;
-  pointer-events: none;
-  display: block;
-  box-sizing: border-box;
-}
-
-.matching-cluster.top-cluster .matching-triangle-image {
-  object-position: center bottom;
-}
-
-.matching-cluster.bottom-cluster .matching-triangle-image {
-  object-position: center top;
+.matching-instruction--narrow {
+  display: none;
 }
 
 .matching-empty {
@@ -279,10 +328,160 @@
 @media (max-width: 768px) {
   .clusters-container {
     grid-template-columns: 1fr;
+    flex: none;
+    min-height: auto;
+    overflow-y: visible;
+  }
+
+  .cluster-group {
+    height: auto;
   }
 
   .cluster-triangles {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    flex: none;
+    min-height: 0;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.25rem;
+  }
+
+  .triangle-image {
+    min-width: 0;
+  }
+
+  .matching-mode {
+    flex: none;
+    min-height: auto;
+    overflow-y: visible;
+  }
+
+  .matching-board {
+    width: 100%;
+  }
+
+  /* Stack matching pairs vertically; left/right side-by-side within each row with no horizontal gap */
+  .matching-container {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .matching-instruction--wide {
+    display: none;
+  }
+
+  .matching-instruction--narrow {
+    display: inline;
+  }
+
+  .matching-column:not(:last-child)::after {
+    display: none;
+  }
+
+  .matching-column {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border-bottom: 2px dashed var(--color-border-strong);
+    /* Matches the panel's bounding box after -90deg rotation */
+    aspect-ratio: 260 / 256;
+    width: 50%;
+    max-width: 175px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .matching-column:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .matching-column-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex-shrink: 0;
+    /*
+     * Keep desktop top/bottom column layout; rotate the whole panel so pairs
+     * read left/right with the same image sizing and seam as wide screens.
+     */
+    width: calc(100% * 256 / 260);
+    aspect-ratio: 256 / 260;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    overflow: hidden;
+  }
+
+  .matching-cluster {
+    flex: 0 0 auto;
+    width: 100%;
+    position: static;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .matching-triangle-frame {
+    position: static;
+    width: 100%;
+    height: auto;
+    transform: none;
+  }
+
+  /* Desktop bottom flip — unchanged semantics inside the rotated panel */
+  .matching-cluster.bottom-cluster .matching-triangle-frame {
+    transform: rotate(180deg);
+  }
+
+  .matching-cluster.top-cluster .matching-triangle-image {
+    object-position: center bottom;
+    padding: 0;
+  }
+
+  .matching-cluster.bottom-cluster .matching-triangle-image {
+    object-position: center top;
+    padding: 0;
+  }
+
+  .pointer-drag-preview--matching {
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Reuse board panel rotation so drag ghost matches on-screen proportions */
+  .matching-column-panel--drag-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex-shrink: 0;
+    aspect-ratio: 256 / 130;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    overflow: hidden;
+  }
+
+  .matching-column-panel--drag-preview .matching-triangle-frame {
+    width: 100%;
+    height: auto;
+    transform: none;
+  }
+
+  .matching-column-panel--drag-preview .matching-cluster.bottom-cluster .matching-triangle-frame {
+    transform: rotate(180deg);
+  }
+
+  .matching-column-panel--drag-preview .matching-cluster.top-cluster .matching-triangle-image {
+    object-position: center bottom;
+    padding: 0;
+  }
+
+  .matching-column-panel--drag-preview .matching-cluster.bottom-cluster .matching-triangle-image {
+    object-position: center top;
+    padding: 0;
   }
 }
 

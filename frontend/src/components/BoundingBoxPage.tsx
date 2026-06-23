@@ -1,7 +1,7 @@
-import { useRef, useEffect, useLayoutEffect, useState, useCallback, useMemo, type MouseEvent as ReactMouseEvent } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState, useCallback, useMemo, type PointerEvent as ReactPointerEvent } from 'react';
 import type { BoundingBox, Point } from '../types';
 import type { ShowToast } from '../types/ui';
-import { fitImageToViewport } from '../utils/viewportLayout';
+import { fitImageToContainer, fitOptionsForContainerWidth } from '../utils/viewportLayout';
 
 interface BoundingBoxPageProps {
   imageUrl: string;
@@ -44,6 +44,7 @@ export function BoundingBoxPage({
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [hoveredCorner, setHoveredCorner] = useState<{ boxId: string; corner: string } | null>(null);
   const [imageLoadState, setImageLoadState] = useState<{ url: string; error: string | null } | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number } | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
   const canvasColors = useMemo(() => {
@@ -62,22 +63,45 @@ export function BoundingBoxPage({
   const imageError = imageLoadState?.url === imageUrl ? imageLoadState?.error : null;
 
   const calculateDisplaySize = useCallback((imgWidth: number, imgHeight: number) => {
-    const { displayWidth, displayHeight, scale } = fitImageToViewport(imgWidth, imgHeight, {
-      padding: 80,
-      widthRatio: 0.9,
-      heightRatio: Number.POSITIVE_INFINITY,
-    });
+    const containerWidth = containerSize?.width ?? containerRef.current?.clientWidth ?? window.innerWidth;
+    const width = containerWidth > 0 ? containerWidth : Math.max(window.innerWidth - 48, 280);
+    // Use viewport estimate for height so the editor doesn't need flex-grow (which breaks action bar layout).
+    const estimatedHeight = Math.max(window.innerHeight - 280, 240);
+    const options = fitOptionsForContainerWidth(width);
+    const { displayWidth, displayHeight, scale } = fitImageToContainer(
+      width,
+      estimatedHeight,
+      imgWidth,
+      imgHeight,
+      { ...options, heightRatio: Number.POSITIVE_INFINITY }
+    );
     return {
       displayWidth,
       displayHeight,
       scale
     };
-  }, []);
+  }, [containerSize]);
 
   const applyCanvasStyles = useCallback((canvas: HTMLCanvasElement, displayWidth: number, displayHeight: number) => {
     canvas.style.width = `${displayWidth}px`;
     canvas.style.height = `${displayHeight}px`;
-    canvas.style.maxWidth = '90%';
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      setContainerSize({
+        width: container.clientWidth,
+        height: 0,
+      });
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -117,33 +141,33 @@ export function BoundingBoxPage({
     };
   }, [imageUrl]);
 
-  // Keep sizing and drawing together in layout effect to avoid Firefox canvas flicker.
-  useLayoutEffect(() => {
+  const getCornerThreshold = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return 24;
+    const rect = canvas.getBoundingClientRect();
+    return Math.max(24, rect.width * 0.04);
+  }, []);
+
+  const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imageRef.current;
-    
-    if (!canvas || !img || !imageReady) {
-      return;
-    }
-    
+    if (!canvas || !img || !imageReady) return;
+
     const { displayWidth, displayHeight } = calculateDisplaySize(img.width, img.height);
-    
     applyCanvasStyles(canvas, displayWidth, displayHeight);
-    
     canvas.width = img.width;
     canvas.height = img.height;
-    
-    // Force layout before drawing so Firefox paints the resized canvas correctly.
+
     const _forceLayout = getComputedStyle(canvas).visibility;
     void _forceLayout;
-    
+
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
-    
+
     ctx.drawImage(img, 0, 0);
-    
+
     const accentColor = canvasColors.accent;
-    
+
     boundingBoxes.forEach((box) => {
       ctx.strokeStyle = accentColor;
       ctx.lineWidth = 4;
@@ -162,7 +186,7 @@ export function BoundingBoxPage({
         ctx.arc(corner.x, corner.y, cornerRadius, 0, Math.PI * 2);
         ctx.fillStyle = accentColor;
         ctx.fill();
-        
+
         ctx.strokeStyle = canvasColors.surface;
         ctx.lineWidth = 4;
         ctx.stroke();
@@ -170,35 +194,15 @@ export function BoundingBoxPage({
     });
   }, [imageReady, boundingBoxes, calculateDisplaySize, applyCanvasStyles, canvasColors]);
 
-  useEffect(() => {
-    if (!imageReady || !imageRef.current) return;
-    
-    const handleResize = () => {
-      const canvas = canvasRef.current;
-      const img = imageRef.current;
-      if (!canvas || !img) return;
-
-      const { displayWidth, displayHeight } = calculateDisplaySize(img.width, img.height);
-      applyCanvasStyles(canvas, displayWidth, displayHeight);
-      
-      const _forceLayout = getComputedStyle(canvas).visibility;
-      void _forceLayout;
-      
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) return;
-      
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [imageReady, calculateDisplaySize, applyCanvasStyles]);
+  // Keep sizing and drawing together in layout effect to avoid Firefox canvas flicker.
+  useLayoutEffect(() => {
+    drawCanvas();
+  }, [drawCanvas, containerSize]);
 
   const getCornerAtPoint = useCallback((
     point: Point,
     box: BoundingBox,
-    threshold = 24
+    threshold: number
   ): 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | null => {
     const corners = [
       { name: 'topLeft' as const, point: box.topLeft },
@@ -239,7 +243,7 @@ export function BoundingBoxPage({
 
   const getBoxAtPoint = useCallback((
     point: Point,
-    cornerThreshold = 24
+    cornerThreshold: number
   ): { box: BoundingBox; corner?: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight'; type: 'corner' | 'box' } | null => {
     for (const box of boundingBoxes) {
       const corner = getCornerAtPoint(point, box, cornerThreshold);
@@ -257,7 +261,7 @@ export function BoundingBoxPage({
     return null;
   }, [boundingBoxes, getCornerAtPoint, isPointInBox]);
 
-  const getCanvasPoint = useCallback((event: ReactMouseEvent<HTMLCanvasElement>): Point => {
+  const getCanvasPoint = useCallback((clientX: number, clientY: number): Point => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
@@ -271,8 +275,8 @@ export function BoundingBoxPage({
     }
     
     const scale = canvas.width / displayedWidth;
-    const mouseX = (event.clientX - rect.left) - borderWidth;
-    const mouseY = (event.clientY - rect.top) - borderWidth;
+    const mouseX = (clientX - rect.left) - borderWidth;
+    const mouseY = (clientY - rect.top) - borderWidth;
     
     const x = Math.max(0, Math.min(canvas.width, mouseX * scale));
     const y = Math.max(0, Math.min(canvas.height, mouseY * scale));
@@ -280,10 +284,11 @@ export function BoundingBoxPage({
     return { x, y };
   }, []);
 
-  const handleMouseDown = useCallback((event: ReactMouseEvent<HTMLCanvasElement>) => {
+  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (event.button !== 0) return;
     event.preventDefault();
-    const point = getCanvasPoint(event);
-    const hit = getBoxAtPoint(point);
+    const point = getCanvasPoint(event.clientX, event.clientY);
+    const hit = getBoxAtPoint(point, getCornerThreshold());
 
     if (hit) {
       setDragState({
@@ -293,14 +298,16 @@ export function BoundingBoxPage({
         startPoint: point,
         startBox: { ...hit.box },
       });
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // ignore
+      }
     }
-  }, [getCanvasPoint, getBoxAtPoint]);
+  }, [getCanvasPoint, getBoxAtPoint, getCornerThreshold]);
 
-  const handleMouseMove = useCallback((event: ReactMouseEvent<HTMLCanvasElement>) => {
-    if (dragState) {
-      event.preventDefault();
-    }
-    const point = getCanvasPoint(event);
+  const applyPointerMove = useCallback((clientX: number, clientY: number) => {
+    const point = getCanvasPoint(clientX, clientY);
 
     if (dragState) {
       const deltaX = point.x - dragState.startPoint.x;
@@ -340,7 +347,7 @@ export function BoundingBoxPage({
 
       onBoundingBoxesChange(updatedBoxes, false);
     } else {
-      const hit = getBoxAtPoint(point);
+      const hit = getBoxAtPoint(point, getCornerThreshold());
       if (hit) {
         if (hit.type === 'corner' && hit.corner) {
           setHoveredCorner({ boxId: hit.box.id, corner: hit.corner });
@@ -351,14 +358,43 @@ export function BoundingBoxPage({
         setHoveredCorner(null);
       }
     }
-  }, [dragState, boundingBoxes, getCanvasPoint, getBoxAtPoint, onBoundingBoxesChange]);
+  }, [dragState, boundingBoxes, getCanvasPoint, getBoxAtPoint, getCornerThreshold, onBoundingBoxesChange]);
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerMove = useCallback((event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (dragState) {
+      event.preventDefault();
+    }
+    applyPointerMove(event.clientX, event.clientY);
+  }, [dragState, applyPointerMove]);
+
+  const handlePointerUp = useCallback(() => {
     if (dragState) {
       onBoundingBoxesChange(boundingBoxes, true);
     }
     setDragState(null);
   }, [dragState, boundingBoxes, onBoundingBoxesChange]);
+
+  useEffect(() => {
+    if (!dragState) return;
+
+    const handleGlobalPointerMove = (e: PointerEvent) => {
+      applyPointerMove(e.clientX, e.clientY);
+    };
+
+    const handleGlobalPointerUp = () => {
+      handlePointerUp();
+    };
+
+    window.addEventListener('pointermove', handleGlobalPointerMove);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+    };
+  }, [dragState, applyPointerMove, handlePointerUp]);
 
   if (imageError) {
     return <div className="error-message">Error: {imageError}</div>;
@@ -377,16 +413,17 @@ export function BoundingBoxPage({
         )}
         <canvas
           ref={canvasRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={!dragState ? handlePointerUp : undefined}
           style={{
             cursor: dragState
               ? 'grabbing'
               : hoveredCorner
                 ? hoveredCorner.corner === 'center' ? 'move' : 'grab'
                 : 'default',
+            touchAction: 'none',
             border: '1px solid #ccc',
             borderColor: canvasColors.border,
             visibility: imageReady ? 'visible' : 'hidden',

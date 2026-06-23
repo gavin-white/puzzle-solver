@@ -430,6 +430,15 @@
   min-height: 0;
 }
 
+.app-main:not(.app-main--landing):not(.app-main--play) > * {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .upload-section {
   display: flex;
   flex-direction: column;
@@ -460,7 +469,8 @@
   justify-content: center;
   align-items: flex-start;
   overflow: visible;
-  min-height: 400px;
+  flex-shrink: 0;
+  min-height: 0;
 }
 
 .bounding-box-editor canvas {
@@ -681,13 +691,18 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
+  flex: 1;
+  min-height: 0;
   gap: 1.5rem;
 }
 
 .crop-page-content {
   width: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .crop-page-actions {
@@ -699,6 +714,7 @@
   background-color: var(--color-bg-surface);
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .crop-page-actions .button-icon {
@@ -712,6 +728,8 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
+  flex: 1;
+  min-height: 0;
   gap: 1.5rem;
 }
 
@@ -896,4 +914,33 @@
   font-size: 0.875rem;
   max-width: 40rem;
   word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .app-main:not(.app-main--landing):not(.app-main--play) {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .crop-page-actions,
+  .bounding-box-page-actions,
+  .cluster-matching-page-actions {
+    width: 100%;
+    max-width: none;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+  }
+
+  .bounding-box-page-actions .button {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+  }
+
+  .crop-page-actions .button,
+  .cluster-matching-page-actions .button {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+  }
 }

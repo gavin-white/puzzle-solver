@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { SubmittedData } from '../types';
 import type { ShowToast } from '../types/ui';
 import { type TriangleItem, getPieceIndexForTriangle, getTrianglePart } from '../utils/clusterUtils';
+import { usePointerTransfer } from '../hooks/usePointerTransfer';
 /* Organizing and matching steps share layout/action styles. */
 import './ClusterMatchingPage.css';
 
@@ -42,14 +43,57 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
   const [clusters, setClusters] = useState<number[]>(
     initialClusters && initialClusters.length === images.length ? initialClusters : []
   );
-  const [draggedTriangle, setDraggedTriangle] = useState<number | null>(null);
-  const [dragOverCluster, setDragOverCluster] = useState<number | null>(null);
 
   const [triangleOrder, setTriangleOrder] = useState<Map<number, number[]>>(() => {
     if (initialClusters && initialClusters.length === images.length) {
       return buildInitialOrder(initialClusters);
     }
     return new Map<number, number[]>();
+  });
+
+  const handleTransfer = useCallback(
+    (triangleIndex: number, targetClusterId: number) => {
+      const sourceClusterId = clusters[triangleIndex];
+      if (sourceClusterId === targetClusterId) return;
+
+      const newClusters = [...clusters];
+      newClusters[triangleIndex] = targetClusterId;
+      setClusters(newClusters);
+
+      setTriangleOrder((prev) => {
+        const newOrder = new Map(prev);
+
+        if (newOrder.has(sourceClusterId)) {
+          newOrder.set(
+            sourceClusterId,
+            newOrder.get(sourceClusterId)!.filter((idx) => idx !== triangleIndex)
+          );
+        }
+
+        if (!newOrder.has(targetClusterId)) {
+          newOrder.set(targetClusterId, []);
+        }
+        const targetOrder = newOrder.get(targetClusterId)!;
+        const filteredOrder = targetOrder.filter((idx) => idx !== triangleIndex);
+        filteredOrder.push(triangleIndex);
+        newOrder.set(targetClusterId, filteredOrder);
+
+        return newOrder;
+      });
+    },
+    [clusters]
+  );
+
+  const {
+    draggedItem: draggedTriangle,
+    dragOverTarget: dragOverCluster,
+    previewPosition,
+    isDragging,
+    handlePointerDown,
+  } = usePointerTransfer<number, number>({
+    onTransfer: handleTransfer,
+    targetDataAttribute: 'drop-target',
+    parseTarget: (value) => parseInt(value, 10),
   });
 
   // Track the original cluster IDs so empty groups don't disappear
@@ -117,70 +161,6 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
     });
   }, [clusterIds, clusterGroups]);
 
-  // Grouping mode handlers
-  const handleDragStart = useCallback((e: React.DragEvent, triangleIndex: number) => {
-    setDraggedTriangle(triangleIndex);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', triangleIndex.toString());
-  }, []);
-
-  const handleDragEnd = useCallback(() => {
-    setDraggedTriangle(null);
-    setDragOverCluster(null);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent, clusterId: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverCluster(clusterId);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setDragOverCluster(null);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent, targetClusterId: number) => {
-      e.preventDefault();
-      if (draggedTriangle === null) return;
-
-      const sourceClusterId = clusters[draggedTriangle];
-      if (sourceClusterId !== targetClusterId) {
-        const newClusters = [...clusters];
-        newClusters[draggedTriangle] = targetClusterId;
-        setClusters(newClusters);
-
-        setTriangleOrder((prev) => {
-          const newOrder = new Map(prev);
-          
-          // Remove from source cluster
-          if (newOrder.has(sourceClusterId)) {
-            newOrder.set(
-              sourceClusterId,
-              newOrder.get(sourceClusterId)!.filter((idx) => idx !== draggedTriangle)
-            );
-          }
-          
-          // Add to target cluster (but avoid duplicates)
-          if (!newOrder.has(targetClusterId)) {
-            newOrder.set(targetClusterId, []);
-          }
-          const targetOrder = newOrder.get(targetClusterId)!;
-          // First remove any existing entry to avoid duplicates
-          const filteredOrder = targetOrder.filter((idx) => idx !== draggedTriangle);
-          filteredOrder.push(draggedTriangle);
-          newOrder.set(targetClusterId, filteredOrder);
-          
-          return newOrder;
-        });
-      }
-
-      setDraggedTriangle(null);
-      setDragOverCluster(null);
-    },
-    [draggedTriangle, clusters]
-  );
-
   const handleSubmit = useCallback(() => {
     if (hasEmptyClusters) {
       onShowToast?.('Each group must have at least one image to proceed', 'error');
@@ -188,6 +168,10 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
     }
     void onSubmit(clusters);
   }, [clusters, hasEmptyClusters, onSubmit, onShowToast]);
+
+  const draggedTriangleData = draggedTriangle !== null
+    ? clusterGroups.get(clusters[draggedTriangle])?.find((t) => t.index === draggedTriangle)
+    : null;
 
   if (!images || images.length === 0) {
     return (
@@ -225,9 +209,7 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
             <div
               key={clusterId}
               className={`cluster-group ${isDragOver ? 'drag-over' : ''}`}
-              onDragOver={(e) => handleDragOver(e, clusterId)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, clusterId)}
+              data-drop-target={clusterId}
             >
               <div className="cluster-meta">
                 <span className="cluster-count">{triangles.length} images</span>
@@ -238,9 +220,8 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
                     <div
                       key={triangle.index}
                       className={`triangle-item ${draggedTriangle === triangle.index ? 'dragging' : ''}`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, triangle.index)}
-                      onDragEnd={handleDragEnd}
+                      onPointerDown={(e) => handlePointerDown(e, triangle.index, e.currentTarget as HTMLElement)}
+                      style={{ touchAction: 'none' }}
                     >
                       <img
                         src={triangle.dataUri}
@@ -251,14 +232,7 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
                     </div>
                   ))
                 ) : (
-                  <div style={{ 
-                    gridColumn: '1 / -1', 
-                    textAlign: 'center', 
-                    color: 'var(--color-text-muted)', 
-                    padding: '2rem',
-                    fontStyle: 'italic',
-                    fontSize: '0.85rem'
-                  }}>
+                  <div className="cluster-empty-placeholder">
                     Empty - drag images here
                   </div>
                 )}
@@ -267,6 +241,23 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
           );
         })}
       </div>
+
+      {isDragging && previewPosition && draggedTriangleData && (
+        <div
+          className="pointer-drag-preview"
+          style={{
+            left: previewPosition.left,
+            top: previewPosition.top,
+          }}
+        >
+          <img
+            src={draggedTriangleData.dataUri}
+            alt=""
+            className="triangle-image"
+            draggable={false}
+          />
+        </div>
+      )}
 
       <div className="cluster-matching-page-actions">
         <button onClick={onEdit} className="button button-edit">

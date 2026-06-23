@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import type { SubmittedData, SolveRequest, PuzzleInfoResponse } from '../types';
 import type { ShowToast } from '../types/ui';
 import { ApiService } from '../services/api';
 import { type TriangleItem, getPieceIndexForTriangle, getTrianglePart } from '../utils/clusterUtils';
 import { userMessageFromError } from '../utils/errors';
+import { usePointerTransfer } from '../hooks/usePointerTransfer';
 import './ClusterMatchingPage.css';
 
 interface ClusterMatchingPageProps {
@@ -14,6 +15,12 @@ interface ClusterMatchingPageProps {
   onSolve: (clusters: number[], matchingOrder: number[], puzzleInfoResponse: PuzzleInfoResponse) => void;
   onShowToast?: ShowToast;
 }
+
+type DraggedCluster = {
+  clusterId: number;
+  isBottom: boolean;
+  imageSrc: string;
+};
 
 /** Pair cluster columns, then fetch puzzle info for solve. */
 export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOrder: propMatchingOrder, onBack, onSolve, onShowToast }: ClusterMatchingPageProps) {
@@ -29,8 +36,6 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
     }
     return [];
   });
-  const [draggedClusterId, setDraggedClusterId] = useState<number | null>(null);
-  const [dragOverPosition, setDragOverPosition] = useState<number | null>(null);
 
   const clusterGroups = useMemo(() => {
     const groups = new Map<number, TriangleItem[]>();
@@ -58,64 +63,72 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
     return groups;
   }, [clusters, images, pieceTriangles]);
 
-  // Matching mode handlers — canvas preview matches on-screen size + rotation (native setDragImage uses full resolution and ignores CSS transform)
-  const handleClusterDragStart = useCallback((e: React.DragEvent, clusterId: number) => {
-    setDraggedClusterId(clusterId);
-    e.dataTransfer.effectAllowed = 'move';
-    const root = e.currentTarget as HTMLElement;
-    const img = root.querySelector('img.matching-triangle-image');
-    if (!(img instanceof HTMLImageElement) || !img.complete || img.naturalWidth <= 0) return;
+  const handleTransfer = useCallback((dragged: DraggedCluster, targetPosition: number) => {
+    setMatchingOrder((prev) => {
+      const newOrder = [...prev];
+      const currentIndex = newOrder.indexOf(dragged.clusterId);
+      const targetIndex = targetPosition;
 
-    const rect = img.getBoundingClientRect();
-    const w = Math.max(1, Math.round(rect.width));
-    const h = Math.max(1, Math.round(rect.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+      if (currentIndex !== targetIndex && currentIndex !== -1) {
+        const targetClusterId = newOrder[targetIndex];
+        newOrder[targetIndex] = dragged.clusterId;
+        newOrder[currentIndex] = targetClusterId;
+      }
 
-    const rotate180 = root.classList.contains('bottom-cluster');
-    if (rotate180) {
-      ctx.translate(w / 2, h / 2);
-      ctx.rotate(Math.PI);
-      ctx.translate(-w / 2, -h / 2);
-    }
-    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, w, h);
-
-    e.dataTransfer.setDragImage(canvas, Math.round(w / 2), Math.round(h / 2));
+      return newOrder;
+    });
   }, []);
 
-  const handleClusterDragEnd = useCallback(() => {
-    setDraggedClusterId(null);
-    setDragOverPosition(null);
+  const getTargetFromPoint = useCallback((clientX: number, clientY: number) => {
+    const element = document.elementFromPoint(clientX, clientY);
+    const dropZone = element?.closest('[data-drop-target]');
+    if (!dropZone) return null;
+    const value = dropZone.getAttribute('data-drop-target');
+    if (value === null) return null;
+    const position = parseInt(value, 10);
+    return Number.isNaN(position) ? null : position;
   }, []);
 
-  const handleClusterDragOver = useCallback((e: React.DragEvent, position: number) => {
-    if (draggedClusterId === null) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverPosition(position);
-  }, [draggedClusterId]);
+  const {
+    draggedItem: draggedCluster,
+    dragOverTarget: dragOverPosition,
+    previewPosition,
+    isDragging,
+    handlePointerDown,
+  } = usePointerTransfer<DraggedCluster, number>({
+    onTransfer: handleTransfer,
+    getTargetFromPoint,
+  });
 
-  const handleClusterDrop = useCallback((e: React.DragEvent, targetPosition: number) => {
-    if (draggedClusterId === null) return;
-    e.preventDefault();
+  const [dragPreviewLayout, setDragPreviewLayout] = useState<{
+    width: number;
+    height: number;
+    narrow: boolean;
+  } | null>(null);
 
-    const newOrder = [...matchingOrder];
-    const currentIndex = newOrder.indexOf(draggedClusterId);
-    const targetIndex = targetPosition;
-
-    if (currentIndex !== targetIndex && currentIndex !== -1) {
-      const targetClusterId = newOrder[targetIndex];
-      newOrder[targetIndex] = draggedClusterId;
-      newOrder[currentIndex] = targetClusterId;
-      setMatchingOrder(newOrder);
+  useEffect(() => {
+    if (!isDragging) {
+      setDragPreviewLayout(null);
     }
+  }, [isDragging]);
 
-    setDraggedClusterId(null);
-    setDragOverPosition(null);
-  }, [draggedClusterId, matchingOrder]);
+  const handleClusterPointerDown = useCallback((
+    e: React.PointerEvent,
+    clusterId: number,
+    isBottom: boolean,
+    imageSrc: string
+  ) => {
+    const img = (e.currentTarget as HTMLElement).querySelector('.matching-triangle-image');
+    const rect = img?.getBoundingClientRect();
+    if (rect) {
+      setDragPreviewLayout({
+        width: rect.width,
+        height: rect.height,
+        narrow: window.matchMedia('(max-width: 768px)').matches,
+      });
+    }
+    handlePointerDown(e, { clusterId, isBottom, imageSrc }, e.currentTarget as HTMLElement);
+  }, [handlePointerDown]);
 
   const solveRequest = useMemo((): SolveRequest | null => {
     if (clusters.length !== 36 || images.length !== 36) return null;
@@ -190,10 +203,28 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
 
   const cols = 4;
 
+  const dragClusterPreview = draggedCluster ? (
+    <div className={`matching-cluster ${draggedCluster.isBottom ? 'bottom-cluster' : 'top-cluster'}`}>
+      <div className="matching-triangle-frame">
+        <img
+          src={draggedCluster.imageSrc}
+          alt=""
+          className="matching-triangle-image"
+          draggable={false}
+        />
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div className="cluster-matching-page matching-mode">
       <p className="flow-step-instruction">
-        Reorder columns so the top and bottom images in each column are a matching pair.
+        <span className="matching-instruction matching-instruction--wide">
+          Reorder columns so the top and bottom images in each column are a matching pair.
+        </span>
+        <span className="matching-instruction matching-instruction--narrow">
+          Reorder rows so the left and right images in each row are a matching pair.
+        </span>
       </p>
       <div className="matching-board">
         <div className="matching-container">
@@ -210,19 +241,23 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
                 <div className="matching-column-panel">
                   {topClusterId !== undefined && (
                     <div
-                      className={`matching-cluster top-cluster ${dragOverPosition === colIndex ? 'drag-over' : ''} ${draggedClusterId === topClusterId ? 'dragging' : ''}`}
-                      draggable
-                      onDragStart={(e) => handleClusterDragStart(e, topClusterId)}
-                      onDragEnd={handleClusterDragEnd}
-                      onDragOver={(e) => handleClusterDragOver(e, colIndex)}
-                      onDrop={(e) => handleClusterDrop(e, colIndex)}
+                      className={`matching-cluster top-cluster ${dragOverPosition === colIndex ? 'drag-over' : ''} ${draggedCluster?.clusterId === topClusterId ? 'dragging' : ''}`}
+                      data-drop-target={colIndex}
+                      onPointerDown={(e) => {
+                        if (topRepresentative) {
+                          handleClusterPointerDown(e, topClusterId, false, topRepresentative.dataUri);
+                        }
+                      }}
+                      style={{ touchAction: 'none' }}
                     >
                       {topRepresentative ? (
-                        <img
-                          src={topRepresentative.dataUri}
-                          alt={`Cluster ${topClusterId}`}
-                          className="matching-triangle-image"
-                        />
+                        <div className="matching-triangle-frame">
+                          <img
+                            src={topRepresentative.dataUri}
+                            alt={`Cluster ${topClusterId}`}
+                            className="matching-triangle-image"
+                          />
+                        </div>
                       ) : (
                         <div className="matching-empty">Empty</div>
                       )}
@@ -231,20 +266,23 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
 
                   {bottomClusterId !== undefined && (
                     <div
-                      className={`matching-cluster bottom-cluster ${dragOverPosition === colIndex + cols ? 'drag-over' : ''} ${draggedClusterId === bottomClusterId ? 'dragging' : ''}`}
-                      draggable
-                      onDragStart={(e) => handleClusterDragStart(e, bottomClusterId)}
-                      onDragEnd={handleClusterDragEnd}
-                      onDragOver={(e) => handleClusterDragOver(e, colIndex + cols)}
-                      onDrop={(e) => handleClusterDrop(e, colIndex + cols)}
+                      className={`matching-cluster bottom-cluster ${dragOverPosition === colIndex + cols ? 'drag-over' : ''} ${draggedCluster?.clusterId === bottomClusterId ? 'dragging' : ''}`}
+                      data-drop-target={colIndex + cols}
+                      onPointerDown={(e) => {
+                        if (bottomRepresentative) {
+                          handleClusterPointerDown(e, bottomClusterId, true, bottomRepresentative.dataUri);
+                        }
+                      }}
+                      style={{ touchAction: 'none' }}
                     >
                       {bottomRepresentative ? (
-                        <img
-                          src={bottomRepresentative.dataUri}
-                          alt={`Cluster ${bottomClusterId}`}
-                          className="matching-triangle-image"
-                          style={{ transform: 'rotate(180deg)' }}
-                        />
+                        <div className="matching-triangle-frame">
+                          <img
+                            src={bottomRepresentative.dataUri}
+                            alt={`Cluster ${bottomClusterId}`}
+                            className="matching-triangle-image"
+                          />
+                        </div>
                       ) : (
                         <div className="matching-empty">Empty</div>
                       )}
@@ -256,6 +294,34 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
           })}
         </div>
       </div>
+
+      {isDragging && previewPosition && draggedCluster && (
+        <div
+          className="pointer-drag-preview pointer-drag-preview--matching"
+          style={{
+            left: previewPosition.left,
+            top: previewPosition.top,
+            ...(dragPreviewLayout
+              ? {
+                  width: dragPreviewLayout.width,
+                  height: dragPreviewLayout.height,
+                  maxWidth: 'none',
+                }
+              : {}),
+          }}
+        >
+          {dragPreviewLayout?.narrow ? (
+            <div
+              className="matching-column-panel matching-column-panel--drag-preview"
+              style={{ width: dragPreviewLayout.height }}
+            >
+              {dragClusterPreview}
+            </div>
+          ) : (
+            dragClusterPreview
+          )}
+        </div>
+      )}
 
       <div className="cluster-matching-page-actions">
         <button onClick={onBack} className="button button-edit">

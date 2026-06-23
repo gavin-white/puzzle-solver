@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import type { ShowToast } from '../types/ui';
-import { fitImageToViewport } from '../utils/viewportLayout';
+import { fitImageToContainer, fitOptionsForContainerWidth } from '../utils/viewportLayout';
 import './ImageCrop.css';
 
 interface CropPageProps {
@@ -18,28 +18,11 @@ interface CropArea {
   height: number;
 }
 
-/** Fit image and initial crop rect to the browser viewport with padding. */
-function layoutForImage(naturalWidth: number, naturalHeight: number) {
-  const { displayWidth, displayHeight } = fitImageToViewport(naturalWidth, naturalHeight, {
-    padding: 80,
-    widthRatio: 0.8,
-    heightRatio: 0.75,
-    maxScale: 1,
-  });
-
-  const paddingPercent = 0.05;
-  const cropArea: CropArea = {
-    x: displayWidth * paddingPercent,
-    y: displayHeight * paddingPercent,
-    width: displayWidth * (1 - paddingPercent * 2),
-    height: displayHeight * (1 - paddingPercent * 2),
-  };
-
-  return {
-    imageSize: { width: naturalWidth, height: naturalHeight },
-    displaySize: { width: displayWidth, height: displayHeight },
-    cropArea,
-  };
+interface CropAreaFractions {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /** Prefer the upload MIME type; fall back to JPEG for canvas export. */
@@ -56,12 +39,46 @@ function whenDecoded(img: HTMLImageElement): Promise<void> {
   return Promise.resolve();
 }
 
+function defaultCropFractions(): CropAreaFractions {
+  const paddingPercent = 0.05;
+  return {
+    x: paddingPercent,
+    y: paddingPercent,
+    width: 1 - paddingPercent * 2,
+    height: 1 - paddingPercent * 2,
+  };
+}
+
+function fractionsToCropArea(fractions: CropAreaFractions, displayWidth: number, displayHeight: number): CropArea {
+  return {
+    x: fractions.x * displayWidth,
+    y: fractions.y * displayHeight,
+    width: fractions.width * displayWidth,
+    height: fractions.height * displayHeight,
+  };
+}
+
+function cropAreaToFractions(cropArea: CropArea, displayWidth: number, displayHeight: number): CropAreaFractions {
+  if (displayWidth <= 0 || displayHeight <= 0) {
+    return defaultCropFractions();
+  }
+  return {
+    x: cropArea.x / displayWidth,
+    y: cropArea.y / displayHeight,
+    width: cropArea.width / displayWidth,
+    height: cropArea.height / displayHeight,
+  };
+}
+
 /** Draggable crop overlay; emits a cropped `File` then parent runs detection. */
 export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onShowToast }: CropPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cropDisplayRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const errorToastSent = useRef(false);
+  const cropFractionsRef = useRef<CropAreaFractions>(defaultCropFractions());
+  const isDraggingRef = useRef(false);
 
   const [phase, setPhase] = useState<'loading' | 'error' | 'ready'>('loading');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -72,6 +89,31 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
   const [dragStart, setDragStart] = useState<{ x: number; y: number; cropStart: CropArea } | null>(null);
   const [dragType, setDragType] = useState<'move' | 'resize-topLeft' | 'resize-topRight' | 'resize-bottomLeft' | 'resize-bottomRight' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const updateDisplaySize = useCallback((naturalWidth: number, naturalHeight: number) => {
+    if (isDraggingRef.current) return;
+
+    const container = containerRef.current;
+    if (!container || naturalWidth <= 0 || naturalHeight <= 0) return;
+
+    const measuredWidth = container.clientWidth;
+    const measuredHeight = container.clientHeight;
+    const containerWidth = measuredWidth > 0 ? measuredWidth : Math.max(window.innerWidth - 48, 280);
+    const containerHeight = Math.max(measuredHeight, 200);
+    const options = fitOptionsForContainerWidth(containerWidth, 1);
+    const { displayWidth, displayHeight } = fitImageToContainer(
+      containerWidth,
+      containerHeight,
+      naturalWidth,
+      naturalHeight,
+      options
+    );
+
+    if (displayWidth <= 0 || displayHeight <= 0) return;
+
+    setDisplaySize({ width: displayWidth, height: displayHeight });
+    setCropArea(fractionsToCropArea(cropFractionsRef.current, displayWidth, displayHeight));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,11 +127,9 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
         setPhase('error');
         return;
       }
-      const { imageSize: is, displaySize: ds, cropArea: ca } = layoutForImage(nw, nh);
+      cropFractionsRef.current = defaultCropFractions();
       setPreviewUrl(urlForDisplay);
-      setImageSize(is);
-      setDisplaySize(ds);
-      setCropArea(ca);
+      setImageSize({ width: nw, height: nh });
       setPhase('ready');
     };
 
@@ -158,20 +198,49 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
     };
   }, [imageFile]);
 
+  useLayoutEffect(() => {
+    if (phase !== 'ready' || !imageSize) return;
+    updateDisplaySize(imageSize.width, imageSize.height);
+  }, [phase, imageSize, updateDisplaySize]);
+
+  useEffect(() => {
+    if (phase !== 'ready' || !imageSize || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const observer = new ResizeObserver(() => {
+      updateDisplaySize(imageSize.width, imageSize.height);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [phase, imageSize, updateDisplaySize]);
+
   useEffect(() => {
     if (phase !== 'error' || !onShowToast || errorToastSent.current) return;
     errorToastSent.current = true;
     onShowToast('Could not open this image. Try another file or use “Choose file” instead of drag-and-drop.', 'error');
   }, [phase, onShowToast]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!cropArea || !containerRef.current) return;
+  const getHandleHitRadius = useCallback(() => {
+    const containerWidth = containerRef.current?.clientWidth ?? 400;
+    return Math.max(20, containerWidth * 0.06);
+  }, []);
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const getPointerPosition = useCallback((clientX: number, clientY: number) => {
+    if (!cropDisplayRef.current) return { x: 0, y: 0 };
+    const rect = cropDisplayRef.current.getBoundingClientRect();
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    };
+  }, []);
 
-    const handleSize = 12;
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (!cropArea || !cropDisplayRef.current || e.button !== 0) return;
+
+    e.preventDefault();
+    const { x, y } = getPointerPosition(e.clientX, e.clientY);
+    const handleSize = getHandleHitRadius();
+
     const corners = [
       { x: cropArea.x, y: cropArea.y, type: 'resize-topLeft' as const },
       { x: cropArea.x + cropArea.width, y: cropArea.y, type: 'resize-topRight' as const },
@@ -182,9 +251,15 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
     for (const corner of corners) {
       const distance = Math.sqrt(Math.pow(x - corner.x, 2) + Math.pow(y - corner.y, 2));
       if (distance < handleSize) {
+        isDraggingRef.current = true;
         setIsDragging(true);
         setDragStart({ x, y, cropStart: { ...cropArea } });
         setDragType(corner.type);
+        try {
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        } catch {
+          // ignore
+        }
         return;
       }
     }
@@ -195,50 +270,61 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
       y >= cropArea.y &&
       y <= cropArea.y + cropArea.height
     ) {
+      isDraggingRef.current = true;
       setIsDragging(true);
       setDragStart({ x, y, cropStart: { ...cropArea } });
       setDragType('move');
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
     }
-  }, [cropArea]);
+  }, [cropArea, getPointerPosition, getHandleHitRadius]);
 
-  const handleMouseMove = useCallback((e: MouseEvent | React.MouseEvent) => {
-    if (!isDragging || !dragStart || !displaySize || !containerRef.current) return;
+  const applyDragMove = useCallback((clientX: number, clientY: number) => {
+    if (!isDragging || !dragStart || !displaySize) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const { x, y } = getPointerPosition(clientX, clientY);
     const deltaX = x - dragStart.x;
     const deltaY = y - dragStart.y;
     const startCrop = dragStart.cropStart;
+    let nextCrop: CropArea | null = null;
 
     if (dragType === 'move') {
       const newX = Math.max(0, Math.min(startCrop.x + deltaX, displaySize.width - startCrop.width));
       const newY = Math.max(0, Math.min(startCrop.y + deltaY, displaySize.height - startCrop.height));
-      setCropArea({ ...startCrop, x: newX, y: newY });
+      nextCrop = { ...startCrop, x: newX, y: newY };
     } else if (dragType === 'resize-topLeft') {
       const newX = Math.max(0, Math.min(startCrop.x + deltaX, startCrop.x + startCrop.width - 50));
       const newY = Math.max(0, Math.min(startCrop.y + deltaY, startCrop.y + startCrop.height - 50));
       const newWidth = startCrop.width - (newX - startCrop.x);
       const newHeight = startCrop.height - (newY - startCrop.y);
-      setCropArea({ x: newX, y: newY, width: newWidth, height: newHeight });
+      nextCrop = { x: newX, y: newY, width: newWidth, height: newHeight };
     } else if (dragType === 'resize-topRight') {
       const newY = Math.max(0, Math.min(startCrop.y + deltaY, startCrop.y + startCrop.height - 50));
       const newWidth = Math.max(50, Math.min(startCrop.width + deltaX, displaySize.width - startCrop.x));
       const newHeight = startCrop.height - (newY - startCrop.y);
-      setCropArea({ x: startCrop.x, y: newY, width: newWidth, height: newHeight });
+      nextCrop = { x: startCrop.x, y: newY, width: newWidth, height: newHeight };
     } else if (dragType === 'resize-bottomLeft') {
       const newX = Math.max(0, Math.min(startCrop.x + deltaX, startCrop.x + startCrop.width - 50));
       const newWidth = startCrop.width - (newX - startCrop.x);
       const newHeight = Math.max(50, Math.min(startCrop.height + deltaY, displaySize.height - startCrop.y));
-      setCropArea({ x: newX, y: startCrop.y, width: newWidth, height: newHeight });
+      nextCrop = { x: newX, y: startCrop.y, width: newWidth, height: newHeight };
     } else if (dragType === 'resize-bottomRight') {
       const newWidth = Math.max(50, Math.min(startCrop.width + deltaX, displaySize.width - startCrop.x));
       const newHeight = Math.max(50, Math.min(startCrop.height + deltaY, displaySize.height - startCrop.y));
-      setCropArea({ x: startCrop.x, y: startCrop.y, width: newWidth, height: newHeight });
+      nextCrop = { x: startCrop.x, y: startCrop.y, width: newWidth, height: newHeight };
     }
-  }, [isDragging, dragStart, dragType, displaySize]);
 
-  const handleMouseUp = useCallback(() => {
+    if (nextCrop) {
+      cropFractionsRef.current = cropAreaToFractions(nextCrop, displaySize.width, displaySize.height);
+      setCropArea(nextCrop);
+    }
+  }, [isDragging, dragStart, dragType, displaySize, getPointerPosition]);
+
+  const handlePointerUp = useCallback(() => {
+    isDraggingRef.current = false;
     setIsDragging(false);
     setDragStart(null);
     setDragType(null);
@@ -247,28 +333,30 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      handleMouseMove(e);
+    const handleGlobalPointerMove = (e: PointerEvent) => {
+      applyDragMove(e.clientX, e.clientY);
     };
 
-    const handleGlobalMouseUp = () => {
-      handleMouseUp();
+    const handleGlobalPointerUp = () => {
+      handlePointerUp();
     };
 
     const handleSelectStart = (e: Event) => {
       e.preventDefault();
     };
 
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('pointermove', handleGlobalPointerMove);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
     document.addEventListener('selectstart', handleSelectStart);
 
     return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
       document.removeEventListener('selectstart', handleSelectStart);
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, applyDragMove, handlePointerUp]);
 
   const handleCrop = useCallback(async () => {
     if (!cropArea || !imageSize || !displaySize || isSubmitting || isLoading) return;
@@ -351,24 +439,9 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
   }, [cropArea, imageSize, displaySize, imageFile, onCrop, onShowToast, isSubmitting, isLoading]);
 
   const isBusy = isSubmitting || isLoading;
+  const isLayoutReady = phase === 'ready' && previewUrl && displaySize && cropArea;
 
-  if (phase === 'loading') {
-    return (
-      <div className="crop-page">
-        <div className="crop-page-content">
-          <div className="crop-page-loading" role="status" aria-live="polite">
-            <div className="crop-page-loading-inner">
-              <div className="crop-page-loading-spinner" aria-hidden />
-              <p className="crop-page-loading-title">Preparing your image</p>
-              <p className="crop-page-loading-sub">Hang tight while we get the crop tool ready.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === 'error' || !previewUrl || !displaySize || !cropArea) {
+  if (phase === 'error') {
     return (
       <div className="crop-page">
         <div className="crop-page-content">
@@ -394,22 +467,37 @@ export function CropPage({ imageFile, onCrop, onCancel, isLoading = false, onSho
     );
   }
 
+  if (!isLayoutReady) {
+    return (
+      <div className="crop-page">
+        <div className="crop-page-content" ref={containerRef}>
+          <div className="crop-page-loading" role="status" aria-live="polite">
+            <div className="crop-page-loading-inner">
+              <div className="crop-page-loading-spinner" aria-hidden />
+              <p className="crop-page-loading-title">Preparing your image</p>
+              <p className="crop-page-loading-sub">Hang tight while we get the crop tool ready.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="crop-page">
       <p className="flow-step-instruction">
         Crop the photo so all nine puzzle pieces are clearly in frame, then submit.
       </p>
-      <div className="crop-page-content">
+      <div className="crop-page-content" ref={containerRef}>
         <div className="image-crop-container">
           {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           <div
-            ref={containerRef}
+            ref={cropDisplayRef}
             className="crop-display"
             role="application"
             tabIndex={0}
             aria-label="Image crop editor"
-            onMouseDown={handleMouseDown}
-            onMouseMove={!isDragging ? handleMouseMove : undefined}
+            onPointerDown={handlePointerDown}
             onKeyDown={(event) => {
               if (event.key === 'Escape' && isDragging) {
                 setIsDragging(false);

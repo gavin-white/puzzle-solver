@@ -558,7 +558,7 @@ export function PlayPage({ puzzleId, puzzleName, onBack, onShowToast }: PlayPage
               <span className="info-value">{puzzleInfo.numValidQuads}</span>
             </div>
             <div className="info-item">
-              <span className="info-label">Solutions (with rotations)</span>
+              <span className="info-label">Solutions</span>
               <span className="info-value">{puzzleInfo.numSolutions}</span>
             </div>
             <div className="info-item">

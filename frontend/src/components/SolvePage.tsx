@@ -254,7 +254,7 @@ export function SolvePage({ submittedData, puzzleInfoResponse, onBack, onStartOv
             <span className="puzzle-info-value">{puzzleInfoResponse.info.numValidQuads}</span>
           </div>
           <div className="puzzle-info-item">
-            <span className="puzzle-info-label">Solutions (with rotations)</span>
+            <span className="puzzle-info-label">Solutions</span>
             <span className="puzzle-info-value">{puzzleInfoResponse.info.numSolutions}</span>
           </div>
           <div className="puzzle-info-item">

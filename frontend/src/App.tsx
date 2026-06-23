@@ -162,7 +162,7 @@ function App() {
         return { 
           showBackToUpload: true,
           helpTitle: 'Match Images',
-          helpContent: 'Arrange the image groups so that matching images are paired vertically - the top and bottom images in each column should match. Drag images to swap their positions until all columns have matching pairs. Click "Solve" when done.'
+          helpContent: 'Arrange the image groups into matching pairs. On wider screens, pairs are columns with the top and bottom images aligned; on narrow screens, each row shows a left and right image that should match. Drag to swap until every pair is correct, then click "Solve".'
         };
       case 'solve':
         return { 
