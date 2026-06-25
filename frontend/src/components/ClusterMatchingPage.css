@@ -82,6 +82,16 @@
 
 .triangle-item.dragging {
   opacity: 0.5;
+  pointer-events: none;
+}
+
+.triangle-item.transfer-selected {
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.55);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.cluster-group.transfer-drop-ready {
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .triangle-image {
@@ -158,7 +168,7 @@
   gap: 0;
   width: 100%;
   position: relative;
-  align-items: start;
+  align-items: stretch;
   transition: opacity 0.25s ease;
 }
 
@@ -169,7 +179,7 @@
   position: relative;
   align-items: stretch;
   width: 100%;
-  height: auto;
+  min-height: 0;
 }
 
 .matching-column-panel {
@@ -188,22 +198,24 @@
   overflow: hidden;
 }
 
-.matching-column:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--color-border-strong) 0px,
-    var(--color-border-strong) 2px,
-    transparent 2px,
-    transparent 4px
-  );
-  pointer-events: none;
-  z-index: 1;
+@media (min-width: 769px) {
+  .matching-column:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--color-border-strong) 0px,
+      var(--color-border-strong) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
 }
 
 .matching-cluster {
@@ -213,6 +225,7 @@
   box-shadow: none;
   transition:
     box-shadow 0.2s ease,
+    background 0.2s ease,
     opacity 0.2s ease;
   overflow: hidden;
   display: flex;
@@ -226,17 +239,24 @@
 
 .matching-triangle-frame {
   width: 100%;
+  height: 0;
+  padding-bottom: 50%;
   line-height: 0;
   display: block;
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
 }
 
 .matching-triangle-image {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
+  height: 100%;
   margin: 0;
   border: none;
   border-radius: 0;
-  padding: 0 0.15rem;
+  padding: 0;
   object-fit: contain;
   pointer-events: none;
   display: block;
@@ -259,7 +279,6 @@
 
 .matching-cluster.bottom-cluster .matching-triangle-image {
   object-position: center top;
-  padding: 0 0.15rem;
 }
 
 .matching-cluster.top-cluster,
@@ -358,9 +377,10 @@
     width: 100%;
   }
 
-  /* Stack matching pairs vertically; left/right side-by-side within each row with no horizontal gap */
+  /* 2×2 grid of vertically stacked pairs (four quadrants) */
   .matching-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto;
     gap: 0;
   }
 
@@ -372,116 +392,50 @@
     display: inline;
   }
 
-  .matching-column:not(:last-child)::after {
+  /* Centered cross separators — same dash pattern on both axes */
+  .matching-container::before,
+  .matching-container::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .matching-container::before {
+    left: calc(50% - 1px);
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--color-border-strong) 0,
+      var(--color-border-strong) 6px,
+      transparent 6px,
+      transparent 10px
+    );
+  }
+
+  .matching-container::after {
+    top: calc(50% - 1px);
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: repeating-linear-gradient(
+      to right,
+      var(--color-border-strong) 0,
+      var(--color-border-strong) 6px,
+      transparent 6px,
+      transparent 10px
+    );
+  }
+
+  .matching-column::before,
+  .matching-column::after {
     display: none;
   }
 
-  .matching-column {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    border-bottom: 2px dashed var(--color-border-strong);
-    /* Matches the panel's bounding box after -90deg rotation */
-    aspect-ratio: 260 / 256;
-    width: 50%;
-    max-width: 175px;
-    margin-left: auto;
-    margin-right: auto;
-    padding-bottom: 0.35rem;
-    margin-bottom: 0.35rem;
-  }
-
-  .matching-column:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-    margin-bottom: 0;
-  }
-
-  .matching-column-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    flex-shrink: 0;
-    /*
-     * Keep desktop top/bottom column layout; rotate the whole panel so pairs
-     * read left/right with the same image sizing and seam as wide screens.
-     */
-    width: calc(100% * 256 / 260);
-    aspect-ratio: 256 / 260;
-    transform: rotate(-90deg);
-    transform-origin: center center;
-    overflow: hidden;
-  }
-
-  .matching-cluster {
-    flex: 0 0 auto;
-    width: 100%;
-    position: static;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .matching-triangle-frame {
-    position: static;
-    width: 100%;
-    height: auto;
-    transform: none;
-  }
-
-  /* Desktop bottom flip — unchanged semantics inside the rotated panel */
-  .matching-cluster.bottom-cluster .matching-triangle-frame {
-    transform: rotate(180deg);
-  }
-
-  .matching-cluster.top-cluster .matching-triangle-image {
-    object-position: center bottom;
-    padding: 0;
-  }
-
-  .matching-cluster.bottom-cluster .matching-triangle-image {
-    object-position: center top;
-    padding: 0;
-  }
-
   .pointer-drag-preview--matching {
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Reuse board panel rotation so drag ghost matches on-screen proportions */
-  .matching-column-panel--drag-preview {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    flex-shrink: 0;
-    aspect-ratio: 256 / 130;
-    transform: rotate(-90deg);
-    transform-origin: center center;
-    overflow: hidden;
-  }
-
-  .matching-column-panel--drag-preview .matching-triangle-frame {
-    width: 100%;
-    height: auto;
-    transform: none;
-  }
-
-  .matching-column-panel--drag-preview .matching-cluster.bottom-cluster .matching-triangle-frame {
-    transform: rotate(180deg);
-  }
-
-  .matching-column-panel--drag-preview .matching-cluster.top-cluster .matching-triangle-image {
-    object-position: center bottom;
-    padding: 0;
-  }
-
-  .matching-column-panel--drag-preview .matching-cluster.bottom-cluster .matching-triangle-image {
-    object-position: center top;
-    padding: 0;
+    max-width: min(36vw, 120px);
   }
 }
 

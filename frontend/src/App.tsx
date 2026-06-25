@@ -162,7 +162,7 @@ function App() {
         return { 
           showBackToUpload: true,
           helpTitle: 'Match Images',
-          helpContent: 'Arrange the image groups into matching pairs. On wider screens, pairs are columns with the top and bottom images aligned; on narrow screens, each row shows a left and right image that should match. Drag to swap until every pair is correct, then click "Solve".'
+          helpContent: 'Arrange the image groups into matching pairs. Each pair stacks a top and bottom image that should match along their shared edge. Drag clusters to swap them into place—on wider screens the four pairs appear in a row; on narrow screens they appear in a 2×2 grid. Click "Solve" when every pair is correct.'
         };
       case 'solve':
         return { 

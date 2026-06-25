@@ -25,7 +25,7 @@ type DraggedCluster = {
 /** Pair cluster columns, then fetch puzzle info for solve. */
 export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOrder: propMatchingOrder, onBack, onSolve, onShowToast }: ClusterMatchingPageProps) {
   const { submitResponse } = submittedData;
-  
+
   const images = useMemo(() => submitResponse?.images || [], [submitResponse?.images]);
   const pieceTriangles = useMemo(() => submitResponse?.pieceTriangles || {}, [submitResponse?.pieceTriangles]);
 
@@ -103,7 +103,6 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
   const [dragPreviewLayout, setDragPreviewLayout] = useState<{
     width: number;
     height: number;
-    narrow: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -124,7 +123,6 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
       setDragPreviewLayout({
         width: rect.width,
         height: rect.height,
-        narrow: window.matchMedia('(max-width: 768px)').matches,
       });
     }
     handlePointerDown(e, { clusterId, isBottom, imageSrc }, e.currentTarget as HTMLElement);
@@ -142,7 +140,6 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
 
       const [topIndex, bottomIndex, leftIndex, rightIndex] = triangleIndices;
 
-      // Get the cluster ID for each triangle position
       pieces[pieceIndex.toString()] = [
         clusters[topIndex],
         clusters[rightIndex],
@@ -151,7 +148,6 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
       ];
     }
 
-    // Build matches by pairing top/bottom clusters in the matching order
     const matches: Record<string, number> = {};
     const cols = 4;
     for (let col = 0; col < cols; col++) {
@@ -223,7 +219,7 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
           Reorder columns so the top and bottom images in each column are a matching pair.
         </span>
         <span className="matching-instruction matching-instruction--narrow">
-          Reorder rows so the left and right images in each row are a matching pair.
+          Drag clusters between groups so the top and bottom images in each pair match.
         </span>
       </p>
       <div className="matching-board">
@@ -241,7 +237,7 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
                 <div className="matching-column-panel">
                   {topClusterId !== undefined && (
                     <div
-                      className={`matching-cluster top-cluster ${dragOverPosition === colIndex ? 'drag-over' : ''} ${draggedCluster?.clusterId === topClusterId ? 'dragging' : ''}`}
+                      className={`matching-cluster top-cluster ${dragOverPosition === colIndex ? 'drag-over' : ''} ${draggedCluster?.clusterId === topClusterId && !draggedCluster.isBottom ? 'dragging' : ''}`}
                       data-drop-target={colIndex}
                       onPointerDown={(e) => {
                         if (topRepresentative) {
@@ -266,7 +262,7 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
 
                   {bottomClusterId !== undefined && (
                     <div
-                      className={`matching-cluster bottom-cluster ${dragOverPosition === colIndex + cols ? 'drag-over' : ''} ${draggedCluster?.clusterId === bottomClusterId ? 'dragging' : ''}`}
+                      className={`matching-cluster bottom-cluster ${dragOverPosition === colIndex + cols ? 'drag-over' : ''} ${draggedCluster?.clusterId === bottomClusterId && draggedCluster.isBottom ? 'dragging' : ''}`}
                       data-drop-target={colIndex + cols}
                       onPointerDown={(e) => {
                         if (bottomRepresentative) {
@@ -310,16 +306,7 @@ export function ClusterMatchingPage({ submittedData, clusters, initialMatchingOr
               : {}),
           }}
         >
-          {dragPreviewLayout?.narrow ? (
-            <div
-              className="matching-column-panel matching-column-panel--drag-preview"
-              style={{ width: dragPreviewLayout.height }}
-            >
-              {dragClusterPreview}
-            </div>
-          ) : (
-            dragClusterPreview
-          )}
+          {dragClusterPreview}
         </div>
       )}
 

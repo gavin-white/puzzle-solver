@@ -40,12 +40,13 @@ function whenDecoded(img: HTMLImageElement): Promise<void> {
 }
 
 function defaultCropFractions(): CropAreaFractions {
-  const paddingPercent = 0.05;
+  /** Inset from each edge as a fraction of image size — small border around the puzzle. */
+  const borderFraction = 0.01;
   return {
-    x: paddingPercent,
-    y: paddingPercent,
-    width: 1 - paddingPercent * 2,
-    height: 1 - paddingPercent * 2,
+    x: borderFraction,
+    y: borderFraction,
+    width: 1 - borderFraction * 2,
+    height: 1 - borderFraction * 2,
   };
 }
 

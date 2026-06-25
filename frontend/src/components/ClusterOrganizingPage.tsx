@@ -3,6 +3,7 @@ import type { SubmittedData } from '../types';
 import type { ShowToast } from '../types/ui';
 import { type TriangleItem, getPieceIndexForTriangle, getTrianglePart } from '../utils/clusterUtils';
 import { usePointerTransfer } from '../hooks/usePointerTransfer';
+import { useNarrowLayout } from '../hooks/useNarrowLayout';
 /* Organizing and matching steps share layout/action styles. */
 import './ClusterMatchingPage.css';
 
@@ -84,16 +85,22 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
     [clusters]
   );
 
+  const narrow = useNarrowLayout();
+
   const {
     draggedItem: draggedTriangle,
+    selectedItem: selectedTriangle,
     dragOverTarget: dragOverCluster,
     previewPosition,
     isDragging,
     handlePointerDown,
+    handleSelectItem,
+    handleTapTarget,
   } = usePointerTransfer<number, number>({
     onTransfer: handleTransfer,
     targetDataAttribute: 'drop-target',
     parseTarget: (value) => parseInt(value, 10),
+    tapMode: narrow,
   });
 
   // Track the original cluster IDs so empty groups don't disappear
@@ -198,18 +205,29 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
   return (
     <div className="cluster-matching-page">
       <p className="flow-step-instruction">
-        Drag images between groups so each group contains only matching edge patterns.
+        <span className="matching-instruction matching-instruction--wide">
+          Drag images between groups so each group contains only matching edge patterns.
+        </span>
+        <span className="matching-instruction matching-instruction--narrow">
+          Tap an image to select it, then tap a group to move it there.
+        </span>
       </p>
       <div className="clusters-container">
         {clusterIds.map((clusterId) => {
           const triangles = clusterGroups.get(clusterId) || [];
           const isDragOver = dragOverCluster === clusterId;
+          const isDropReady = narrow && selectedTriangle !== null;
 
           return (
             <div
               key={clusterId}
-              className={`cluster-group ${isDragOver ? 'drag-over' : ''}`}
+              className={`cluster-group ${isDragOver ? 'drag-over' : ''} ${isDropReady ? 'transfer-drop-ready' : ''}`}
               data-drop-target={clusterId}
+              onClick={() => {
+                if (narrow && selectedTriangle !== null) {
+                  handleTapTarget(clusterId);
+                }
+              }}
             >
               <div className="cluster-meta">
                 <span className="cluster-count">{triangles.length} images</span>
@@ -219,9 +237,29 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
                   triangles.map((triangle) => (
                     <div
                       key={triangle.index}
-                      className={`triangle-item ${draggedTriangle === triangle.index ? 'dragging' : ''}`}
-                      onPointerDown={(e) => handlePointerDown(e, triangle.index, e.currentTarget as HTMLElement)}
-                      style={{ touchAction: 'none' }}
+                      className={`triangle-item ${draggedTriangle === triangle.index ? 'dragging' : ''} ${selectedTriangle === triangle.index ? 'transfer-selected' : ''}`}
+                      onPointerDown={
+                        narrow
+                          ? undefined
+                          : (e) => handlePointerDown(e, triangle.index, e.currentTarget as HTMLElement)
+                      }
+                      onClick={
+                        narrow
+                          ? (e) => {
+                              e.stopPropagation();
+                              if (selectedTriangle !== null) {
+                                if (selectedTriangle === triangle.index) {
+                                  handleSelectItem(triangle.index);
+                                } else {
+                                  handleTapTarget(clusterId);
+                                }
+                              } else {
+                                handleSelectItem(triangle.index);
+                              }
+                            }
+                          : undefined
+                      }
+                      style={narrow ? undefined : { touchAction: 'none' }}
                     >
                       <img
                         src={triangle.dataUri}
@@ -242,7 +280,7 @@ export function ClusterOrganizingPage({ submittedData, initialClusters: propClus
         })}
       </div>
 
-      {isDragging && previewPosition && draggedTriangleData && (
+      {!narrow && isDragging && previewPosition && draggedTriangleData && (
         <div
           className="pointer-drag-preview"
           style={{
