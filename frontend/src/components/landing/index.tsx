@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Hero } from './Hero';
-import { SamplePuzzles } from './SamplePuzzles';
+import { SamplePuzzles, getDefaultSamplePuzzleId } from './SamplePuzzles';
 import { HowItWorks } from './HowItWorks';
 import { Footer } from './Footer';
 import type { ShowToast } from '../../types/ui';
@@ -22,7 +22,7 @@ export function LandingPage({
   disabled,
   onShowToast,
 }: LandingPageProps) {
-  const [selectedPuzzleId, setSelectedPuzzleId] = useState<string | null>('puzzle1');
+  const [selectedPuzzleId, setSelectedPuzzleId] = useState<string | null>(getDefaultSamplePuzzleId);
 
   const handleSolveSample = useCallback(
     (puzzle: { id: string; name: string; fullImage: string }) => {

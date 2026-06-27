@@ -371,7 +371,7 @@ html {
 }
 
 .landing-sample-section .landing-section-header,
-.landing-sample-section .landing-puzzle-grid,
+.landing-sample-section .landing-puzzle-grid-wrap,
 .landing-sample-section .landing-sample-actions {
   max-width: 1400px;
   margin-left: auto;
@@ -383,8 +383,15 @@ html {
   text-align: center;
 }
 
-.landing-sample-section .landing-puzzle-grid {
+.landing-puzzle-grid-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin-bottom: 1.5rem;
+}
+
+.landing-sample-section .landing-puzzle-grid {
+  margin-bottom: 0;
   justify-content: center;
 }
 
@@ -414,8 +421,19 @@ html {
   flex-wrap: wrap;
   justify-content: center;
   gap: 1.5rem;
-  margin-bottom: 1.5rem;
   max-width: 100%;
+}
+
+.landing-puzzle-grid-loading {
+  width: 100%;
+  text-align: center;
+  color: var(--landing-text-muted);
+  font-size: var(--font-size-secondary);
+  line-height: var(--line-height-secondary);
+}
+
+.landing-puzzle-grid-spacer {
+  display: none;
 }
 
 .landing-puzzle-card {
@@ -1014,6 +1032,115 @@ html {
 }
 
 @media (max-width: 768px) {
+  .landing-page,
+  .landing-sample-zone,
+  .landing-sample-section {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .landing-sample-section {
+    overflow-x: clip;
+  }
+
+  .landing-sample-section .landing-section-header {
+    margin-bottom: 1rem;
+  }
+
+  .landing-sample-section .landing-puzzle-grid {
+    justify-content: flex-start;
+  }
+
+  .landing-puzzle-grid-wrap {
+    --landing-carousel-fade: 2.5rem;
+    position: relative;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+
+  .landing-puzzle-grid-wrap::before,
+  .landing-puzzle-grid-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--landing-carousel-fade);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .landing-puzzle-grid-wrap::before {
+    left: 0;
+    background: linear-gradient(
+      to right,
+      var(--landing-sample-bg-peak) 0%,
+      transparent 100%
+    );
+  }
+
+  .landing-puzzle-grid-wrap::after {
+    right: 0;
+    background: linear-gradient(
+      to left,
+      var(--landing-sample-bg-peak) 0%,
+      transparent 100%
+    );
+  }
+
+  .landing-puzzle-grid {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.75rem;
+    padding: 0.25rem 0 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .landing-puzzle-grid-spacer {
+    display: block;
+    flex: 0 0 var(--landing-carousel-fade);
+    width: var(--landing-carousel-fade);
+    height: 1px;
+    pointer-events: none;
+  }
+
+  .landing-puzzle-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .landing-puzzle-card {
+    width: 132px;
+    min-width: 132px;
+    height: 168px;
+    padding: 8px;
+  }
+
+  .landing-puzzle-card-thumb {
+    width: 116px;
+    height: 116px;
+    margin-bottom: 6px;
+  }
+
+  .landing-puzzle-card-name {
+    font-size: 0.8rem;
+    line-height: 1.2;
+    padding: 0 2px;
+  }
+
+  .landing-sample-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.625rem;
+  }
+
+  .landing-sample-btn {
+    width: 100%;
+    text-align: center;
+  }
+
   .landing-step-details-inner {
     /* Keep timeline inset — margin-left: 0 overlapped the dotted rail on narrow screens. */
     margin-right: 0.75rem;

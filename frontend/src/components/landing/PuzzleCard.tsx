@@ -13,6 +13,7 @@ export function PuzzleCard({ id, name, selected, onSelect }: PuzzleCardProps) {
     <button
       type="button"
       className={`landing-puzzle-card ${selected ? 'selected' : ''}`}
+      data-puzzle-id={id}
       onClick={onSelect}
     >
       <div className="landing-puzzle-card-thumb">
